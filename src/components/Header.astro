@@ -1,0 +1,25 @@
+---
+import type { Locale } from '../i18n/config';
+import { t } from '../i18n/utils';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+---
+
+<header class="border-b border-gray-200 bg-white">
+  <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+    <a href={`/${lang}/`} class="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
+      {t(lang, 'site.title')}
+    </a>
+    <nav class="flex items-center gap-6">
+      <a href={`/${lang}/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+        {t(lang, 'nav.home')}
+      </a>
+      <LanguageSwitcher lang={lang} />
+    </nav>
+  </div>
+</header>

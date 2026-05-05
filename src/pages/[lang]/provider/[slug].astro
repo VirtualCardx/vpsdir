@@ -1,0 +1,128 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { locales, type Locale, isValidLocale } from '../../../i18n/config';
+import { t, getProviderAlternateUrl } from '../../../i18n/utils';
+import { getLogoUrl } from '../../../lib/r2';
+import providersData from '../../../data/providers.json';
+
+interface ProviderData {
+  id: number;
+  slug_zh: string;
+  slug_en: string;
+  url: string;
+  category: string;
+  rating: number | null;
+  logo_key: string | null;
+  name_zh: string | null;
+  name_en: string | null;
+  desc_zh: string | null;
+  desc_en: string | null;
+  meta_title_zh: string | null;
+  meta_title_en: string | null;
+  meta_desc_zh: string | null;
+  meta_desc_en: string | null;
+}
+
+export function getStaticPaths() {
+  const paths: {
+    params: { lang: string; slug: string };
+    props: { provider: ProviderData; lang: Locale };
+  }[] = [];
+
+  for (const p of providersData as ProviderData[]) {
+    paths.push({
+      params: { lang: 'zh', slug: p.slug_zh },
+      props: { provider: p, lang: 'zh' },
+    });
+    paths.push({
+      params: { lang: 'en', slug: p.slug_en },
+      props: { provider: p, lang: 'en' },
+    });
+  }
+  return paths;
+}
+
+const { provider, lang } = Astro.props;
+
+const name = lang === 'zh' ? (provider.name_zh || provider.slug_zh) : (provider.name_en || provider.slug_en);
+const desc = lang === 'zh' ? provider.desc_zh : provider.desc_en;
+const metaTitle = (lang === 'zh' ? provider.meta_title_zh : provider.meta_title_en) || name;
+const metaDesc = (lang === 'zh' ? provider.meta_desc_zh : provider.meta_desc_en) || desc || '';
+const logoUrl = getLogoUrl(provider.logo_key);
+
+const siteUrl = Astro.url.origin;
+const alternates = locales.map((l) => ({
+  lang: l,
+  href: `${siteUrl}${getProviderAlternateUrl(l, provider.slug_zh, provider.slug_en)}`,
+}));
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name,
+  url: provider.url,
+  description: desc || undefined,
+  aggregateRating: provider.rating
+    ? { '@type': 'AggregateRating', ratingValue: provider.rating, bestRating: 5 }
+    : undefined,
+};
+---
+
+<BaseLayout
+  title={metaTitle}
+  description={metaDesc}
+  lang={lang}
+  alternates={alternates}
+  jsonLd={jsonLd}
+>
+  <div class="max-w-3xl mx-auto">
+    <a href={`/${lang}/`} class="text-sm text-gray-500 hover:text-gray-700 mb-6 inline-block">
+      &larr; {t(lang, 'common.back')}
+    </a>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="flex items-start gap-6">
+        <img
+          src={logoUrl}
+          alt={name}
+          class="w-20 h-20 rounded-lg object-contain bg-gray-50 flex-shrink-0"
+          width="80"
+          height="80"
+        />
+        <div class="flex-1">
+          <h1 class="text-2xl font-bold text-gray-900">{name}</h1>
+          <span class="inline-block text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded mt-2">
+            {t(lang, `categories.${provider.category}`)}
+          </span>
+          {provider.rating != null && provider.rating > 0 && (
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-yellow-500">&#9733;</span>
+              <span class="text-gray-700 font-medium">{provider.rating.toFixed(1)}</span>
+              <span class="text-gray-400 text-sm">/ 5</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {desc && (
+        <div class="mt-6 pt-6 border-t border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-800 mb-2">{t(lang, 'provider.description')}</h2>
+          <p class="text-gray-600 leading-relaxed whitespace-pre-line">{desc}</p>
+        </div>
+      )}
+
+      <div class="mt-6 pt-6 border-t border-gray-100">
+        <a
+          href={provider.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+        >
+          {t(lang, 'provider.visit')} &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

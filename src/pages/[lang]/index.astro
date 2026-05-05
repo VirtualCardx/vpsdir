@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProviderCard from '../../components/ProviderCard.astro';
+import { isValidLocale, defaultLocale, locales, type Locale } from '../../i18n/config';
+import { t } from '../../i18n/utils';
+import { getDb } from '../../lib/db';
+import { getCached, setCache } from '../../lib/cache';
+import { providers, providersContent } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
+
+const lang = Astro.params.lang as string;
+if (!isValidLocale(lang)) {
+  return Astro.redirect(`/${defaultLocale}/`);
+}
+
+const db = getDb(env.DB);
+
+// Try KV cache first
+const cacheKey = `home:${lang}`;
+type ProviderRow = {
+  providers: typeof providers.$inferSelect;
+  providers_content: typeof providersContent.$inferSelect | null;
+};
+let data = await getCached<ProviderRow[]>(env.VPSDIR_KV, cacheKey);
+
+if (!data) {
+  const rows = await db
+    .select()
+    .from(providers)
+    .leftJoin(
+      providersContent,
+      and(eq(providers.id, providersContent.provider_id), eq(providersContent.lang, lang)),
+    )
+    .where(eq(providers.is_active, true))
+    .orderBy(providers.category, providers.id);
+
+  data = rows;
+  await setCache(env.VPSDIR_KV, cacheKey, data);
+}
+
+// Group by category
+const categories = new Map<string, ProviderRow[]>();
+for (const row of data) {
+  const cat = row.providers.category;
+  if (!categories.has(cat)) categories.set(cat, []);
+  categories.get(cat)!.push(row);
+}
+
+const siteUrl = Astro.url.origin;
+const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
+---
+
+<BaseLayout
+  title={t(lang, 'site.title')}
+  description={t(lang, 'site.description')}
+  lang={lang as Locale}
+  alternates={alternates}
+>
+  <h1 class="text-3xl font-bold mb-8">{t(lang, 'site.description')}</h1>
+
+  {categories.size === 0 && (
+    <p class="text-gray-500 text-center py-12">{t(lang, 'admin.noProviders')}</p>
+  )}
+
+  {Array.from(categories.entries()).map(([category, items]) => (
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800">
+        {t(lang, `categories.${category}`)}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((row) => (
+          <ProviderCard
+            provider={row.providers}
+            content={
+              row.providers_content || { name: row.providers.slug_en, desc: null }
+            }
+            lang={lang as Locale}
+          />
+        ))}
+      </div>
+    </section>
+  ))}
+</BaseLayout>

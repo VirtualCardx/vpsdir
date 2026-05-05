@@ -1,0 +1,212 @@
+---
+import '../../styles/global.css';
+import { t } from '../../i18n/utils';
+import type { Locale } from '../../i18n/config';
+import { getDb } from '../../lib/db';
+import { providers, providersContent } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { getLastUpdated } from '../../lib/cache';
+import { env } from 'cloudflare:workers';
+
+const lang: Locale = 'zh';
+const db = getDb(env.DB);
+
+const allProviders = await db
+  .select()
+  .from(providers)
+  .leftJoin(
+    providersContent,
+    and(eq(providers.id, providersContent.provider_id), eq(providersContent.lang, 'zh')),
+  )
+  .orderBy(providers.id);
+
+const lastUpdated = await getLastUpdated(env.VPSDIR_KV);
+const message = Astro.url.searchParams.get('msg');
+
+const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{t(lang, 'admin.dashboard')}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <header class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+        <h1 class="text-lg font-bold">{t(lang, 'admin.dashboard')}</h1>
+        <div class="flex items-center gap-4">
+          {lastUpdated && (
+            <span class="text-xs text-gray-400">
+              Last cache: {new Date(lastUpdated).toLocaleString('zh-CN')}
+            </span>
+          )}
+          <form method="POST" action="/api/admin/cache-refresh" class="inline">
+            <button
+              type="submit"
+              class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              {t(lang, 'admin.refreshCache')}
+            </button>
+          </form>
+          <form method="POST" action="/api/auth/logout" class="inline">
+            <button
+              type="submit"
+              class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              {t(lang, 'admin.logout')}
+            </button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+      {message && (
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
+          {message === 'cache_refreshed' ? t(lang, 'admin.cacheRefreshed') : message === 'saved' ? '保存成功' : message === 'deleted' ? '删除成功' : message}
+        </div>
+      )}
+
+      <!-- Add Provider Form -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">{t(lang, 'admin.addProvider')}</h2>
+        <form method="POST" action="/api/admin/providers" enctype="multipart/form-data" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.slug')} (中文)</label>
+              <input type="text" name="slug_zh" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="example-provider" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.slug')} (EN)</label>
+              <input type="text" name="slug_en" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="example-provider" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.name')} (中文)</label>
+              <input type="text" name="name_zh" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.name')} (EN)</label>
+              <input type="text" name="name_en" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.url')}</label>
+              <input type="url" name="url" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="https://" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'provider.category')}</label>
+              <select name="category" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                {categories.map((cat) => (
+                  <option value={cat}>{t(lang, `categories.${cat}`)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'provider.rating')}</label>
+              <input type="number" name="rating" min="0" max="5" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="0-5" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.logo')}</label>
+              <input type="file" name="logo" accept="image/*" class="w-full text-sm" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (中文)</label>
+              <textarea name="desc_zh" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (EN)</label>
+              <textarea name="desc_en" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm"></textarea>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaTitle')} (中文)</label>
+              <input type="text" name="meta_title_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaTitle')} (EN)</label>
+              <input type="text" name="meta_title_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaDesc')} (中文)</label>
+              <input type="text" name="meta_desc_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaDesc')} (EN)</label>
+              <input type="text" name="meta_desc_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+          </div>
+          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
+            {t(lang, 'admin.save')}
+          </button>
+        </form>
+      </div>
+
+      <!-- Provider List -->
+      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">ID</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">{t(lang, 'admin.name')}</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">{t(lang, 'provider.category')}</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">{t(lang, 'admin.active')}</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">{t(lang, 'admin.actions')}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {allProviders.length === 0 ? (
+                <tr>
+                  <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                    {t(lang, 'admin.noProviders')}
+                  </td>
+                </tr>
+              ) : (
+                allProviders.map((row) => (
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-500">{row.providers.id}</td>
+                    <td class="px-4 py-3 font-medium">
+                      {row.providers_content?.name || row.providers.slug_en}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="text-xs px-2 py-0.5 bg-gray-100 rounded">
+                        {t(lang, `categories.${row.providers.category}`)}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class:list={[
+                        'text-xs px-2 py-0.5 rounded',
+                        row.providers.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
+                      ]}>
+                        {row.providers.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <a href={`/admin/edit/${row.providers.id}`} class="text-blue-600 hover:underline text-xs">
+                          {t(lang, 'admin.edit')}
+                        </a>
+                        <form method="POST" action={`/api/admin/providers?id=${row.providers.id}&_method=DELETE`} class="inline"
+                          onsubmit={`return confirm('${t(lang, 'admin.confirm_delete')}')`}>
+                          <button type="submit" class="text-red-600 hover:underline text-xs">
+                            {t(lang, 'admin.delete')}
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+---
+import type { Locale } from '../i18n/config';
+import { t } from '../i18n/utils';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+---
+
+<footer class="border-t border-gray-200 py-6 mt-auto">
+  <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+    &copy; {new Date().getFullYear()} {t(lang, 'site.title')}
+  </div>
+</footer>

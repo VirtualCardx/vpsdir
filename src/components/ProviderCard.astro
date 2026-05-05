@@ -1,0 +1,53 @@
+---
+import type { Locale } from '../i18n/config';
+import { t } from '../i18n/utils';
+import { getLogoUrl } from '../lib/r2';
+
+interface Props {
+  provider: {
+    slug_zh: string;
+    slug_en: string;
+    category: string;
+    rating: number | null;
+    logo_key: string | null;
+  };
+  content: {
+    name: string;
+    desc: string | null;
+  };
+  lang: Locale;
+}
+
+const { provider, content, lang } = Astro.props;
+const slug = lang === 'zh' ? provider.slug_zh : provider.slug_en;
+const logoUrl = getLogoUrl(provider.logo_key);
+---
+
+<a
+  href={`/${lang}/provider/${slug}`}
+  class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+>
+  <div class="flex items-start gap-4">
+    <img
+      src={logoUrl}
+      alt={content.name}
+      class="w-12 h-12 rounded object-contain flex-shrink-0 bg-gray-50"
+      loading="lazy"
+      width="48"
+      height="48"
+    />
+    <div class="flex-1 min-w-0">
+      <h3 class="font-semibold text-gray-900 truncate">{content.name}</h3>
+      <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">
+        {t(lang, `categories.${provider.category}`)}
+      </span>
+      {content.desc && <p class="text-sm text-gray-500 mt-2 line-clamp-2">{content.desc}</p>}
+      {provider.rating != null && provider.rating > 0 && (
+        <div class="flex items-center gap-1 mt-2">
+          <span class="text-yellow-500 text-sm">&#9733;</span>
+          <span class="text-sm text-gray-600">{provider.rating.toFixed(1)}</span>
+        </div>
+      )}
+    </div>
+  </div>
+</a>

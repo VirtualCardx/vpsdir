@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  alternates?: { lang: string; href: string }[];
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, alternates, jsonLd } = Astro.props;
+const canonicalUrl = Astro.url.href;
+---
+
+<title>{title}</title>
+{description && <meta name="description" content={description} />}
+<link rel="canonical" href={canonicalUrl} />
+{alternates?.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}

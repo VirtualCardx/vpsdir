@@ -1,0 +1,30 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "vpsdir",
+	"compatibility_date": "2025-01-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "vpsdir-db",
+			"database_id": "53b2da01-87b8-440b-817d-bf9fff369011",
+			"migrations_dir": "drizzle/migrations",
+			"remote": true
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "VPSDIR_KV",
+			"id": "39fb736aea774af890337772038e9468",
+			"remote": true
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "R2",
+			"bucket_name": "vpsdir-assets",
+			"remote": true
+		}
+	]
+	// Secrets (set via `wrangler secret put`):
+	// ADMIN_SESSION_SECRET  - HMAC signing key for admin sessions
+}
