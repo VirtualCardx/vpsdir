@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ../../../AppData/Roaming/npm/node_modules/wrangler/wrangler-dist/ProxyServerWorker.js
+// node_modules/wrangler/wrangler-dist/ProxyServerWorker.js
 import * as cfw from "cloudflare:workers";
 import { EmailMessage } from "cloudflare:email";
 var WORKERS_MODULE_SYMBOL = /* @__PURE__ */ Symbol("workers-module");
@@ -3384,7 +3384,7 @@ var ProxyServerWorker_default = {
   async fetch(request, env) {
     try {
       if (isJSRPCBinding(request)) {
-        return newWorkersRpcResponse(
+        return await newWorkersRpcResponse(
           request,
           getExposedJSRPCBinding(request, env)
         );
@@ -3398,7 +3398,7 @@ var ProxyServerWorker_default = {
             originalHeaders.set(name, value);
           }
         }
-        return fetcher.fetch(
+        return await fetcher.fetch(
           request.headers.get("MF-URL") ?? "http://example.com",
           new Request(request, {
             redirect: "manual",
@@ -3415,7 +3415,7 @@ var ProxyServerWorker_default = {
   }
 };
 
-// ../../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+// node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
 var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
   try {
     return await middlewareCtx.next(request, env);
@@ -3433,13 +3433,13 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// .wrangler/tmp/bundle-8LMLLS/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-x4UoO0/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default
 ];
 var middleware_insertion_facade_default = ProxyServerWorker_default;
 
-// ../../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
+// node_modules/wrangler/templates/middleware/common.ts
 var __facade_middleware__ = [];
 function __facade_register__(...args) {
   __facade_middleware__.push(...args.flat());
@@ -3464,7 +3464,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-8LMLLS/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-x4UoO0/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

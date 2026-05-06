@@ -36,26 +36,27 @@ ${hreflangs}
   for (const p of allProviders) {
     for (const locale of locales) {
       const slug = locale === 'zh' ? p.slug_zh : p.slug_en;
+      // Extract date portion only for W3C Datetime compliance (YYYY-MM-DD)
+      const lastmod = p.updated_at.split(' ')[0];
       urls.push(`  <url>
-    <loc>${baseUrl}/${locale}/provider/${slug}</loc>
-    <lastmod>${p.updated_at}</lastmod>
+    <loc>${baseUrl}/${locale}/provider/${slug}/</loc>
+    <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="zh" href="${baseUrl}/zh/provider/${p.slug_zh}" />
-    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/en/provider/${p.slug_en}" />
+    <xhtml:link rel="alternate" hreflang="zh" href="${baseUrl}/zh/provider/${p.slug_zh}/" />
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/en/provider/${p.slug_en}/" />
   </url>`);
     }
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join('\n')}
 </urlset>`;
 
   return new Response(xml, {
     headers: {
-      'Content-Type': 'application/xml',
+      'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
     },
   });

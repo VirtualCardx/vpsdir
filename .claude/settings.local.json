@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(node test-sitemap.js)",
+      "Bash(npm run *)",
+      "Bash(npx wrangler *)",
+      "Bash(curl -s http://127.0.0.1:8787/sitemap.xml)",
+      "Bash(curl *)",
+      "Bash(xmllint --format -)",
+      "Bash(node *)",
+      "Bash(timeout 10 bash -c 'until curl -s http://127.0.0.1:8787/sitemap.xml > /dev/null 2>&1; do sleep 1; done')"
+    ]
+  }
+}

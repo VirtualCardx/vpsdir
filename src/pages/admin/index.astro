@@ -110,7 +110,21 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.logo')}</label>
-              <input type="file" name="logo" accept="image/*" class="w-full text-sm" />
+              <div id="logo-upload-area-add" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer bg-gray-50">
+                <input type="file" name="logo" accept="image/*" class="hidden" id="logo-input-add" />
+                <div id="upload-placeholder-add">
+                  <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <p class="text-sm text-gray-600">点击或拖拽图片到此处上传</p>
+                  <p class="text-xs text-gray-400 mt-1">支持 PNG, JPG, GIF, SVG 格式</p>
+                </div>
+                <div id="logo-preview-add" class="hidden">
+                  <img id="logo-image-add" src="" alt="Logo预览" class="h-20 w-auto object-contain mx-auto rounded" />
+                  <p class="text-xs text-gray-500 mt-2">点击更换图片</p>
+                  <button type="button" id="remove-logo-add" class="mt-2 text-xs text-red-600 hover:text-red-700">删除</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -208,5 +222,70 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
         </div>
       </div>
     </main>
+
+    <script>
+      const logoInput = document.getElementById('logo-input-add');
+      const logoUploadArea = document.getElementById('logo-upload-area-add');
+      const uploadPlaceholder = document.getElementById('upload-placeholder-add');
+      const logoPreview = document.getElementById('logo-preview-add');
+      const logoImage = document.getElementById('logo-image-add');
+      const removeLogo = document.getElementById('remove-logo-add');
+
+      // Click to upload
+      logoUploadArea.addEventListener('click', function(e) {
+        if (e.target !== removeLogo) {
+          logoInput.click();
+        }
+      });
+
+      // File selection
+      logoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          showPreview(file);
+        }
+      });
+
+      // Drag and drop
+      logoUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        logoUploadArea.classList.add('border-blue-400', 'bg-blue-50');
+      });
+
+      logoUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        logoUploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+      });
+
+      logoUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        logoUploadArea.classList.remove('border-blue-400', 'bg-blue-50');
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+          logoInput.files = e.dataTransfer.files;
+          showPreview(file);
+        }
+      });
+
+      function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          logoImage.src = e.target.result;
+          uploadPlaceholder.classList.add('hidden');
+          logoPreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Remove logo
+      removeLogo.addEventListener('click', function(e) {
+        e.stopPropagation();
+        logoInput.value = '';
+        logoImage.src = '';
+        uploadPlaceholder.classList.remove('hidden');
+        logoPreview.classList.add('hidden');
+      });
+    </script>
   </body>
 </html>
