@@ -109,6 +109,19 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
               <input type="number" name="rating" min="0" max="5" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="0-5" />
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">自定义标签</label>
+              <div class="border border-gray-300 rounded p-3 bg-gray-50">
+                <input type="hidden" name="tags" id="tags-input-add" />
+                <div id="tags-container-add" class="flex flex-wrap gap-2 mb-2">
+                  <!-- Tags will appear here -->
+                </div>
+                <div class="flex gap-2">
+                  <input type="text" id="new-tag-add" class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm" placeholder="输入标签名" />
+                  <button type="button" id="add-tag-add" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">添加</button>
+                </div>
+              </div>
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.logo')}</label>
               <div id="logo-upload-area-add" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer bg-gray-50">
                 <input type="file" name="logo" accept="image/*" class="hidden" id="logo-input-add" />
@@ -224,6 +237,51 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
     </main>
 
     <script>
+      // Tag management
+      const tagsInput = document.getElementById('tags-input-add');
+      const tagsContainer = document.getElementById('tags-container-add');
+      const newTagInput = document.getElementById('new-tag-add');
+      const addTagButton = document.getElementById('add-tag-add');
+
+      let tags = [];
+
+      function renderTags() {
+        tagsContainer.innerHTML = tags.map(tag => `
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+            ${tag}
+            <button type="button" class="hover:text-blue-900" data-tag="${tag}">&times;</button>
+          </span>
+        `).join('');
+
+        tagsInput.value = JSON.stringify(tags);
+      }
+
+      addTagButton.addEventListener('click', function() {
+        const tag = newTagInput.value.trim();
+        if (tag && !tags.includes(tag)) {
+          tags.push(tag);
+          newTagInput.value = '';
+          renderTags();
+        }
+      });
+
+      newTagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addTagButton.click();
+        }
+      });
+
+      tagsContainer.addEventListener('click', function(e) {
+        const button = e.target.closest('[data-tag]');
+        if (button) {
+          const tag = button.dataset.tag;
+          tags = tags.filter(t => t !== tag);
+          renderTags();
+        }
+      });
+
+      // Logo upload
       const logoInput = document.getElementById('logo-input-add');
       const logoUploadArea = document.getElementById('logo-upload-area-add');
       const uploadPlaceholder = document.getElementById('upload-placeholder-add');
@@ -233,7 +291,7 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
 
       // Click to upload
       logoUploadArea.addEventListener('click', function(e) {
-        if (e.target !== removeLogo) {
+        if (e.target !== removeLogo && !e.target.closest('#tags-container-add') && !e.target.closest('#new-tag-add') && !e.target.closest('#add-tag-add')) {
           logoInput.click();
         }
       });

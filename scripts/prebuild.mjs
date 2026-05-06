@@ -30,7 +30,7 @@ async function main() {
   try {
     const result = await env.DB.prepare(
       `SELECT
-        p.id, p.slug_zh, p.slug_en, p.url, p.category, p.rating, p.logo_key,
+        p.id, p.slug_zh, p.slug_en, p.url, p.category, p.rating, p.logo_key, p.updated_at, p.tags,
         pc_zh.name AS name_zh, pc_zh.desc AS desc_zh,
         pc_zh.meta_title AS meta_title_zh, pc_zh.meta_desc AS meta_desc_zh,
         pc_en.name AS name_en, pc_en.desc AS desc_en,

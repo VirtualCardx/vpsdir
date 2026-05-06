@@ -21,6 +21,7 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
     const category = formData.get('category') as string;
     const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : 0;
     const is_active = formData.has('is_active');
+    const tags = formData.get('tags') as string || null;
     const name_zh = (formData.get('name_zh') as string).trim();
     const name_en = (formData.get('name_en') as string).trim();
     const desc_zh = (formData.get('desc_zh') as string)?.trim() || null;
@@ -51,6 +52,7 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
         category,
         rating,
         is_active,
+        tags,
         ...(logo_key ? { logo_key } : {}),
         updated_at: new Date().toISOString(),
       })
@@ -105,6 +107,7 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
   const url_value = (formData.get('url') as string).trim();
   const category = formData.get('category') as string;
   const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : 0;
+  const tags = formData.get('tags') as string || null;
   const name_zh = (formData.get('name_zh') as string).trim();
   const name_en = (formData.get('name_en') as string).trim();
   const desc_zh = (formData.get('desc_zh') as string)?.trim() || null;
@@ -123,7 +126,7 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
 
   const inserted = await db
     .insert(providers)
-    .values({ slug_zh, slug_en, url: url_value, category, rating, logo_key })
+    .values({ slug_zh, slug_en, url: url_value, category, rating, logo_key, tags })
     .returning({ id: providers.id })
     .get();
 

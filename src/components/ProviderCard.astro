@@ -10,6 +10,8 @@ interface Props {
     category: string;
     rating: number | null;
     logo_key: string | null;
+    tags: string | null;
+    updated_at: string;
   };
   content: {
     name: string;
@@ -20,7 +22,10 @@ interface Props {
 
 const { provider, content, lang } = Astro.props;
 const slug = lang === 'zh' ? provider.slug_zh : provider.slug_en;
-const logoUrl = getLogoUrl(provider.logo_key);
+const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
+
+// Parse tags JSON
+const tags = provider.tags ? JSON.parse(provider.tags) as string[] : [];
 ---
 
 <a
@@ -41,6 +46,15 @@ const logoUrl = getLogoUrl(provider.logo_key);
       <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">
         {t(lang, `categories.${provider.category}`)}
       </span>
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-1 mt-2">
+          {tags.map((tag) => (
+            <span class="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
       {content.desc && <p class="text-sm text-gray-500 mt-2 line-clamp-2">{content.desc}</p>}
       {provider.rating != null && provider.rating > 0 && (
         <div class="flex items-center gap-1 mt-2">

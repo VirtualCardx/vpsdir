@@ -1,62 +1,53 @@
 ---
-export const prerender = true;
-
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { locales, type Locale, isValidLocale } from '../../../i18n/config';
 import { t, getProviderAlternateUrl } from '../../../i18n/utils';
 import { getLogoUrl } from '../../../lib/r2';
-import providersData from '../../../data/providers.json';
+import { getDb } from '../../../lib/db';
+import { providers, providersContent } from '../../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
 
-interface ProviderData {
-  id: number;
-  slug_zh: string;
-  slug_en: string;
-  url: string;
-  category: string;
-  rating: number | null;
-  logo_key: string | null;
-  name_zh: string | null;
-  name_en: string | null;
-  desc_zh: string | null;
-  desc_en: string | null;
-  meta_title_zh: string | null;
-  meta_title_en: string | null;
-  meta_desc_zh: string | null;
-  meta_desc_en: string | null;
+const lang = Astro.params.lang as string;
+if (!isValidLocale(lang)) {
+  return Astro.redirect('/zh/');
 }
 
-export function getStaticPaths() {
-  const paths: {
-    params: { lang: string; slug: string };
-    props: { provider: ProviderData; lang: Locale };
-  }[] = [];
+const slug = Astro.params.slug as string;
+const db = getDb(env.DB);
 
-  for (const p of providersData as ProviderData[]) {
-    paths.push({
-      params: { lang: 'zh', slug: p.slug_zh },
-      props: { provider: p, lang: 'zh' },
-    });
-    paths.push({
-      params: { lang: 'en', slug: p.slug_en },
-      props: { provider: p, lang: 'en' },
-    });
-  }
-  return paths;
+// Find provider by slug
+const field = lang === 'zh' ? 'slug_zh' : 'slug_en';
+const provider = await db
+  .select()
+ .from(providers)
+  .where(eq(providers[field], slug))
+  .get();
+
+if (!provider) {
+  return Astro.redirect(`/${lang}/`);
 }
 
-const { provider, lang } = Astro.props;
+// Get content for current language
+const content = await db
+  .select()
+ .from(providersContent)
+  .where(and(eq(providersContent.provider_id, provider.id), eq(providersContent.lang, lang)))
+  .get();
 
-const name = lang === 'zh' ? (provider.name_zh || provider.slug_zh) : (provider.name_en || provider.slug_en);
-const desc = lang === 'zh' ? provider.desc_zh : provider.desc_en;
-const metaTitle = (lang === 'zh' ? provider.meta_title_zh : provider.meta_title_en) || name;
-const metaDesc = (lang === 'zh' ? provider.meta_desc_zh : provider.meta_desc_en) || desc || '';
-const logoUrl = getLogoUrl(provider.logo_key);
+const name = content?.name || (lang === 'zh' ? provider.slug_zh : provider.slug_en);
+const desc = content?.desc;
+const metaTitle = content?.meta_title || name;
+const metaDesc = content?.meta_desc || desc || '';
+const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 
 const siteUrl = Astro.url.origin;
 const alternates = locales.map((l) => ({
   lang: l,
   href: `${siteUrl}${getProviderAlternateUrl(l, provider.slug_zh, provider.slug_en)}`,
 }));
+
+const tags = provider.tags ? JSON.parse(provider.tags) : [];
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -101,6 +92,15 @@ const jsonLd = {
               <span class="text-yellow-500">&#9733;</span>
               <span class="text-gray-700 font-medium">{provider.rating.toFixed(1)}</span>
               <span class="text-gray-400 text-sm">/ 5</span>
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div class="flex flex-wrap gap-2 mt-3">
+              {tags.map((tag) => (
+                <span class="inline-block text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
         </div>

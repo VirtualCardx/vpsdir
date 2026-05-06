@@ -9,6 +9,7 @@ export const providers = sqliteTable('providers', {
   category: text('category').notNull(),
   rating: real('rating').default(0),
   logo_key: text('logo_key'),
+  tags: text('tags'), // JSON array of custom tags
   is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
   updated_at: text('updated_at').notNull().default(sql`(datetime('now'))`),

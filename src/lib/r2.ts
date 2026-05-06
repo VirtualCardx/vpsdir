@@ -13,7 +13,9 @@ export async function deleteLogo(r2: R2Bucket, key: string): Promise<void> {
   await r2.delete(key);
 }
 
-export function getLogoUrl(key: string | null): string {
+export function getLogoUrl(key: string | null, updatedAt?: string | null): string {
   if (!key) return '/images/placeholder.svg';
-  return `/api/logo/${key}`;
+  // Add timestamp to bust cache when logo is updated
+  const timestamp = updatedAt ? `?v=${new Date(updatedAt).getTime()}` : '';
+  return `/api/logo/${key}${timestamp}`;
 }

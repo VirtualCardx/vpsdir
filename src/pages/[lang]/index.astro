@@ -49,6 +49,11 @@ for (const row of data) {
 
 const siteUrl = Astro.url.origin;
 const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
+
+// Prepare data for client-side search
+const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items]) =>
+  items.map(item => ({ ...item, category: cat }))
+);
 ---
 
 <BaseLayout
@@ -57,11 +62,47 @@ const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
   lang={lang as Locale}
   alternates={alternates}
 >
-  <h1 class="text-3xl font-bold mb-8">{t(lang, 'site.description')}</h1>
+  <h1 class="text-3xl font-bold mb-6">{t(lang, 'site.description')}</h1>
 
-  {categories.size === 0 && (
-    <p class="text-gray-500 text-center py-12">{t(lang, 'admin.noProviders')}</p>
-  )}
+  <!-- Search Bar -->
+  <div class="mb-6">
+    <div class="flex gap-2">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="搜索服务商名称或标签..."
+          class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+        <svg class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <button
+        id="search-button"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        搜索
+      </button>
+      <button
+        id="clear-button"
+        class="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+      >
+        清除
+      </button>
+    </div>
+    <div id="search-tags" class="mt-3 flex flex-wrap gap-2">
+      <!-- Active search tags will appear here -->
+    </div>
+  </div>
+
+  <div id="provider-container">
+    {categories.size === 0 && (
+      <p class="text-gray-500 text-center py-12">{t(lang, 'admin.noProviders')}</p>
+    )}
 
   {Array.from(categories.entries()).map(([category, items]) => (
     <section class="mb-10">
@@ -81,4 +122,154 @@ const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
       </div>
     </section>
   ))}
+  </div>
+
+  <script define:vars={{ data: JSON.stringify(providerSearchData), lang }}>
+    const allProviders = JSON.parse(data);
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const clearButton = document.getElementById('clear-button');
+    const searchTags = document.getElementById('search-tags');
+    const providerContainer = document.getElementById('provider-container');
+
+    let currentSearch = '';
+    let currentTagFilter = '';
+
+    // Search button click
+    searchButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      currentSearch = searchInput.value.toLowerCase().trim();
+      filterProviders();
+    });
+
+    // Enter key in search input
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchButton.click();
+      }
+    });
+
+    // Clear button click
+    clearButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      searchInput.value = '';
+      currentSearch = '';
+      currentTagFilter = '';
+
+      // Reset all tag buttons
+      const tagButtons = searchTags.querySelectorAll('[data-tag]');
+      tagButtons.forEach(button => {
+        button.classList.remove('bg-blue-500', 'text-white');
+        button.classList.add('bg-blue-50', 'text-blue-700');
+      });
+
+      filterProviders();
+    });
+
+    function filterProviders() {
+      if (!currentSearch && !currentTagFilter) {
+        renderProviders(allProviders);
+        return;
+      }
+
+      const filtered = allProviders.filter(provider => {
+        const content = provider.providers_content;
+        const name = content?.name?.toLowerCase() || '';
+        const desc = content?.desc?.toLowerCase() || '';
+        const tags = provider.providers.tags ? JSON.parse(provider.providers.tags) : [];
+
+        const matchesSearch = name.includes(currentSearch) ||
+                            desc.includes(currentSearch) ||
+                            tags.some(tag => tag.toLowerCase().includes(currentSearch));
+
+        const matchesTag = !currentTagFilter || tags.includes(currentTagFilter);
+
+        return matchesSearch && matchesTag;
+      });
+
+      renderProviders(filtered);
+    }
+
+    function renderProviders(providers) {
+      // Group by category
+      const categories = new Map();
+      for (const provider of providers) {
+        const cat = provider.category;
+        if (!categories.has(cat)) categories.set(cat, []);
+        categories.get(cat).push(provider);
+      }
+
+      if (categories.size === 0) {
+        providerContainer.innerHTML = '<p class="text-gray-500 text-center py-12">没有找到匹配的服务商</p>';
+        return;
+      }
+
+      providerContainer.innerHTML = Array.from(categories.entries()).map(([category, items]) => `
+        <section class="mb-10">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">${category}</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${items.map(row => {
+              const content = row.providers_content || { name: row.providers.slug_en, desc: null };
+              const tags = row.providers.tags ? JSON.parse(row.providers.tags) : [];
+              const logoUrl = row.providers.logo_key ? `/api/logo/${row.providers.logo_key}` : 'https://via.placeholder.com/48';
+              const slug = lang === 'zh' ? row.providers.slug_zh : row.providers.slug_en;
+
+              return `
+                <a href="/${lang}/provider/${slug}" class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                  <div class="flex items-start gap-4">
+                    <img src="${logoUrl}" alt="${content.name}" class="w-12 h-12 rounded object-contain flex-shrink-0 bg-gray-50" loading="lazy" width="48" height="48" />
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold text-gray-900 truncate">${content.name}</h3>
+                      <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">${category}</span>
+                      ${tags.length > 0 ? `
+                        <div class="flex flex-wrap gap-1 mt-2">
+                          ${tags.map(tag => `<span class="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">${tag}</span>`).join('')}
+                        </div>
+                      ` : ''}
+                      ${content.desc ? `<p class="text-sm text-gray-500 mt-2 line-clamp-2">${content.desc}</p>` : ''}
+                      ${row.providers.rating != null && row.providers.rating > 0 ? `
+                        <div class="flex items-center gap-1 mt-2">
+                          <span class="text-yellow-500 text-sm">&#9733;</span>
+                          <span class="text-sm text-gray-600">${parseFloat(row.providers.rating).toFixed(1)}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                </a>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      `).join('');
+    }
+
+    // Extract and display all unique tags
+    const allTags = new Set();
+    allProviders.forEach(provider => {
+      const tags = provider.providers.tags ? JSON.parse(provider.providers.tags) : [];
+      tags.forEach(tag => allTags.add(tag));
+    });
+
+    if (allTags.size > 0) {
+      searchTags.innerHTML = Array.from(allTags).map(tag => `
+        <button class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors" data-tag="${tag}">
+          ${tag}
+        </button>
+      `).join('');
+
+      searchTags.addEventListener('click', function(e) {
+        const tagButton = e.target.closest('[data-tag]');
+        if (tagButton) {
+          const tag = tagButton.dataset.tag;
+          currentTagFilter = currentTagFilter === tag ? '' : tag;
+          tagButton.classList.toggle('bg-blue-500', currentTagFilter === tag);
+          tagButton.classList.toggle('text-white', currentTagFilter === tag);
+          tagButton.classList.toggle('bg-blue-50', currentTagFilter !== tag);
+          tagButton.classList.toggle('text-blue-700', currentTagFilter !== tag);
+          filterProviders();
+        }
+      });
+    }
+  </script>
 </BaseLayout>
