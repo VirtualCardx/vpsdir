@@ -75,7 +75,7 @@ const categories = await db.select().from(activityCategories).orderBy(activityCa
             <select name="category_id" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
               {categories.map((cat) => (
                 <option value={cat.id} selected={cat.id === activity.categoryId}>
-                  {cat.icon} {cat.slug}
+                  {cat.slug}
                 </option>
               ))}
             </select>

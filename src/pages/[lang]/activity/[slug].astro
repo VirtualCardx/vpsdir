@@ -108,7 +108,7 @@ const siteName = t(lang, 'site.title');
 const pageTitle = activity.metaTitle || activity.title;
 const pageDesc = activity.metaDesc || activity.description || richTextToPlainText(activity.content).slice(0, 160);
 const pageUrl = `${Astro.site}/${lang}/activity/${slug}/`;
-const categoryLabel = activity.categoryIcon ? `${activity.categoryIcon} ${activity.categorySlug}` : activity.categorySlug;
+const categoryLabel = activity.categorySlug;
 
 // Get content as plain text for SEO
 const contentText = richTextToPlainText(activity.content);
