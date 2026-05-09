@@ -11,21 +11,21 @@
 			"database_name": "vpsdir-db",
 			"database_id": "62d71507-5e06-4af7-81ad-1d7eab2530e1",
 			"migrations_dir": "drizzle/migrations",
-			"remote": true
+			"remote": false
 		}
 	],
 	"kv_namespaces": [
 		{
 			"binding": "VPSDIR_KV",
 			"id": "920d29bdf11d4146a07c634320ad7a9c",
-			"remote": true
+			"remote": false
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "R2",
 			"bucket_name": "vpsdir-assets",
-			"remote": true
+			"remote": false
 		}
 	]
 	// Secrets (set via `wrangler secret put`):
