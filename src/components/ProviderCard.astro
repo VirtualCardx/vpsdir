@@ -2,6 +2,7 @@
 import type { Locale } from '../i18n/config';
 import { t } from '../i18n/utils';
 import { getLogoUrl } from '../lib/r2';
+import { richTextToPlainText } from '../lib/rich-text';
 
 interface Props {
   provider: {
@@ -23,6 +24,7 @@ interface Props {
 const { provider, content, lang } = Astro.props;
 const slug = lang === 'zh' ? provider.slug_zh : provider.slug_en;
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
+const descText = richTextToPlainText(content.desc);
 
 // Parse tags JSON
 const tags = provider.tags ? JSON.parse(provider.tags) as string[] : [];
@@ -55,7 +57,7 @@ const tags = provider.tags ? JSON.parse(provider.tags) as string[] : [];
           ))}
         </div>
       )}
-      {content.desc && <p class="text-sm text-gray-500 mt-2 line-clamp-2">{content.desc}</p>}
+      {descText && <p class="text-sm text-gray-500 mt-2 line-clamp-2">{descText}</p>}
       {provider.rating != null && provider.rating > 0 && (
         <div class="flex items-center gap-1 mt-2">
           <span class="text-yellow-500 text-sm">&#9733;</span>

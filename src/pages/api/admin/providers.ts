@@ -5,6 +5,7 @@ import { providers, providersContent } from '../../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { uploadLogo, deleteLogo } from '../../../lib/r2';
 import { invalidateCache } from '../../../lib/cache';
+import { sanitizeRichText } from '../../../lib/rich-text';
 
 // Unified handler for all provider operations
 export const POST: APIRoute = async ({ request, redirect, url }) => {
@@ -24,8 +25,8 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
     const tags = formData.get('tags') as string || null;
     const name_zh = (formData.get('name_zh') as string).trim();
     const name_en = (formData.get('name_en') as string).trim();
-    const desc_zh = (formData.get('desc_zh') as string)?.trim() || null;
-    const desc_en = (formData.get('desc_en') as string)?.trim() || null;
+    const desc_zh = sanitizeRichText((formData.get('desc_zh') as string)?.trim());
+    const desc_en = sanitizeRichText((formData.get('desc_en') as string)?.trim());
     const meta_title_zh = (formData.get('meta_title_zh') as string)?.trim() || null;
     const meta_title_en = (formData.get('meta_title_en') as string)?.trim() || null;
     const meta_desc_zh = (formData.get('meta_desc_zh') as string)?.trim() || null;
@@ -110,8 +111,8 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
   const tags = formData.get('tags') as string || null;
   const name_zh = (formData.get('name_zh') as string).trim();
   const name_en = (formData.get('name_en') as string).trim();
-  const desc_zh = (formData.get('desc_zh') as string)?.trim() || null;
-  const desc_en = (formData.get('desc_en') as string)?.trim() || null;
+  const desc_zh = sanitizeRichText((formData.get('desc_zh') as string)?.trim());
+  const desc_en = sanitizeRichText((formData.get('desc_en') as string)?.trim());
   const meta_title_zh = (formData.get('meta_title_zh') as string)?.trim() || null;
   const meta_title_en = (formData.get('meta_title_en') as string)?.trim() || null;
   const meta_desc_zh = (formData.get('meta_desc_zh') as string)?.trim() || null;

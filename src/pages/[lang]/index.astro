@@ -8,6 +8,7 @@ import { getCached, setCache } from '../../lib/cache';
 import { providers, providersContent } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
+import { richTextToPlainText } from '../../lib/rich-text';
 
 const lang = Astro.params.lang as string;
 if (!isValidLocale(lang)) {
@@ -52,7 +53,16 @@ const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
 
 // Prepare data for client-side search
 const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items]) =>
-  items.map(item => ({ ...item, category: cat }))
+  items.map(item => ({
+    ...item,
+    category: cat,
+    providers_content: item.providers_content
+      ? {
+          ...item.providers_content,
+          desc: richTextToPlainText(item.providers_content.desc),
+        }
+      : null,
+  }))
 );
 ---
 

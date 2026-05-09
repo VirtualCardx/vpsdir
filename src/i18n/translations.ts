@@ -9,6 +9,7 @@ const translations: Record<Locale, Record<string, Record<string, string>>> = {
     nav: {
       home: '首页',
       providers: '服务商',
+      activities: '最新活动',
       admin: '管理',
     },
     categories: {
@@ -66,6 +67,7 @@ const translations: Record<Locale, Record<string, Record<string, string>>> = {
     nav: {
       home: 'Home',
       providers: 'Providers',
+      activities: 'Latest Activities',
       admin: 'Admin',
     },
     categories: {

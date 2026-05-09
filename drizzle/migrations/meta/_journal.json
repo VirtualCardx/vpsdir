@@ -15,6 +15,20 @@
       "when": 1778059234412,
       "tag": "0001_fresh_sabretooth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1715149072000,
+      "tag": "0005_add_activities",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778251984839,
+      "tag": "0003_gorgeous_infant_terrible",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,215 @@
+---
+import '../../../../styles/global.css';
+import AdminHeader from '../../../../components/AdminHeader.astro';
+import { t } from '../../../../i18n/utils';
+import type { Locale } from '../../../../i18n/config';
+import { getDb } from '../../../../lib/db';
+import { activities, activitiesContent, activityCategories } from '../../../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
+
+const lang: Locale = 'zh';
+const db = getDb(env.DB);
+
+const id = Number(Astro.params.id);
+if (isNaN(id)) return Astro.redirect('/admin/activities/');
+
+const activity = await db.select().from(activities).where(eq(activities.id, id)).get();
+if (!activity) return Astro.redirect('/admin/activities/');
+
+const contentZh = await db
+  .select()
+  .from(activitiesContent)
+  .where(and(eq(activitiesContent.activity_id, id), eq(activitiesContent.lang, 'zh')))
+  .get();
+
+const contentEn = await db
+  .select()
+  .from(activitiesContent)
+  .where(and(eq(activitiesContent.activity_id, id), eq(activitiesContent.lang, 'en')))
+  .get();
+
+const categories = await db.select().from(activityCategories).orderBy(activityCategories.sort_order);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>编辑活动 - {contentZh?.title || activity.slug}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <AdminHeader
+      title="编辑活动"
+      subtitle={contentZh?.title || activity.slug}
+      backHref="/admin/activities/"
+      backLabel="返回活动列表"
+      navItems={[
+        { href: '/admin/', label: t(lang, 'admin.dashboard') },
+        { href: '/admin/activities/', label: '活动管理', current: true },
+      ]}
+    >
+      <Fragment slot="actions">
+        <form method="POST" action="/api/auth/logout" class="inline">
+          <button
+            type="submit"
+            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {t(lang, 'admin.logout')}
+          </button>
+        </form>
+      </Fragment>
+    </AdminHeader>
+
+    <main class="container mx-auto px-4 py-6 max-w-4xl">
+      <form id="activityForm" method="POST" action={`/api/admin/activities?id=${id}&_method=PUT`} enctype="multipart/form-data" class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">标识符 (Slug)</label>
+            <input type="text" name="slug" required value={activity.slug} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+            <select name="category_id" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+              {categories.map((cat) => (
+                <option value={cat.id} selected={cat.id === activity.categoryId}>
+                  {cat.icon} {cat.slug}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">发布时间</label>
+            <input type="datetime-local" name="published_at" value={activity.publishedAt.slice(0, 16)} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div class="flex items-end gap-4">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="is_featured" value="1" checked={activity.isFeatured} class="rounded" />
+              <span class="text-sm font-medium text-gray-700">推荐活动</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="is_active" value="1" checked={activity.isActive} class="rounded" />
+              <span class="text-sm font-medium text-gray-700">已发布</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">标题 (中文)</label>
+            <input type="text" name="title_zh" required value={contentZh?.title || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">标题 (EN)</label>
+            <input type="text" name="title_en" required value={contentEn?.title || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (中文)</label>
+            <input type="text" name="slug_zh" value={contentZh?.slug || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (EN)</label>
+            <input type="text" name="slug_en" value={contentEn?.slug || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (中文)</label>
+            <input type="text" name="description_zh" value={contentZh?.description || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="用于列表展示和SEO描述" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (EN)</label>
+            <input type="text" name="description_en" value={contentEn?.description || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Short description for lists and SEO" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">内容 (中文)</label>
+            <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="请输入活动详细内容，支持标题、列表、引用、图片等格式">
+              <input type="hidden" name="content_zh" data-rich-text-input value={contentZh?.content || ''} />
+              <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+              <div data-rich-text-editor></div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">支持标题、加粗、列表、引用、代码块、图片等格式。</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Content (EN)</label>
+            <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="Enter detailed activity content with headings, lists, quotes, images, and more">
+              <input type="hidden" name="content_en" data-rich-text-input value={contentEn?.content || ''} />
+              <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+              <div data-rich-text-editor></div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Supports headings, emphasis, lists, quotes, code blocks, images, and more.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SEO 标题 (中文)</label>
+            <input type="text" name="meta_title_zh" value={contentZh?.metaTitle || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用活动标题" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SEO Title (EN)</label>
+            <input type="text" name="meta_title_en" value={contentEn?.metaTitle || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use activity title" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SEO 描述 (中文)</label>
+            <input type="text" name="meta_desc_zh" value={contentZh?.metaDesc || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用简短描述" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SEO Description (EN)</label>
+            <input type="text" name="meta_desc_en" value={contentEn?.metaDesc || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use short description" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
+            保存更改
+          </button>
+          <a href="/admin/activities/" class="text-sm text-gray-500 hover:text-gray-700">取消</a>
+        </div>
+      </form>
+    </main>
+
+    <script>
+      import { initAdminRichTextEditors } from '../../../../scripts/admin-rich-text';
+      initAdminRichTextEditors();
+
+      // Handle form submission with redirect
+      document.getElementById('activityForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        submitBtn.textContent = '更新中...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch(`/api/admin/activities?id=${id}&_method=PUT`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            // Success - redirect back to admin activities page
+            window.location.href = '/admin/activities/?msg=updated';
+          } else {
+            const error = await response.json();
+            alert('更新失败: ' + (error.error || '未知错误'));
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('更新活动时出错:', error);
+          alert('更新活动时出错，请重试');
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,383 @@
+---
+import '../../../styles/global.css';
+import AdminHeader from '../../../components/AdminHeader.astro';
+import { t } from '../../../i18n/utils';
+import type { Locale } from '../../../i18n/config';
+import { getDb } from '../../../lib/db';
+import { activities, activitiesContent, activityCategories } from '../../../db/schema';
+import { eq, and, desc } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
+
+const lang: Locale = 'zh';
+const db = getDb(env.DB);
+
+// Check if tables exist first
+let allActivities = [];
+let categories = [];
+
+try {
+  // Try to get categories first
+  categories = await db.select().from(activityCategories).orderBy(activityCategories.sort_order);
+
+  // Get basic activity data
+  const activityData = await db
+    .select()
+    .from(activities)
+    .orderBy(desc(activities.published_at))
+    .limit(50);
+
+  // Get content and category info separately
+  allActivities = await Promise.all(
+    activityData.map(async (activity) => {
+      try {
+        const zhContent = await db
+          .select()
+          .from(activitiesContent)
+          .where(and(eq(activitiesContent.activity_id, activity.id), eq(activitiesContent.lang, 'zh')))
+          .limit(1)
+          .then(rows => rows[0]);
+
+        const category = await db
+          .select()
+          .from(activityCategories)
+          .where(eq(activityCategories.id, activity.category_id))
+          .limit(1)
+          .then(rows => rows[0]);
+
+        return {
+          id: activity.id,
+          slug: activity.slug,
+          categoryId: activity.category_id,
+          publishedAt: activity.published_at,
+          isFeatured: activity.is_featured,
+          isActive: activity.is_active,
+          viewCount: activity.view_count,
+          createdAt: activity.created_at,
+          titleZh: zhContent?.title || '',
+          categorySlug: category?.slug || '',
+          categoryIcon: category?.icon || '',
+        };
+      } catch (err) {
+        console.error('Error processing activity:', activity.id, err);
+        return {
+          id: activity.id,
+          slug: activity.slug,
+          categoryId: activity.category_id,
+          publishedAt: activity.published_at,
+          isFeatured: activity.is_featured,
+          isActive: activity.is_active,
+          viewCount: activity.view_count,
+          createdAt: activity.created_at,
+          titleZh: '',
+          categorySlug: '',
+          categoryIcon: '',
+        };
+      }
+    })
+  );
+} catch (error) {
+  console.error('Database query error:', error);
+  // Set empty arrays if tables don't exist yet
+  allActivities = [];
+  categories = [];
+}
+
+const message = Astro.url.searchParams.get('msg');
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>活动管理 - 管理后台</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <AdminHeader
+      title="活动管理"
+      subtitle="发布、编辑与下线站点活动内容"
+      navItems={[
+        { href: '/admin/', label: t(lang, 'admin.dashboard') },
+        { href: '/admin/activities/', label: '活动管理', current: true },
+      ]}
+    >
+      <Fragment slot="actions">
+        <form method="POST" action="/api/auth/logout" class="inline">
+          <button
+            type="submit"
+            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {t(lang, 'admin.logout')}
+          </button>
+        </form>
+      </Fragment>
+    </AdminHeader>
+
+    <main class="container mx-auto px-4 py-6">
+      {message && (
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
+          {message === 'created' ? '创建成功' : message === 'updated' ? '更新成功' : message === 'deleted' ? '删除成功' : message}
+        </div>
+      )}
+
+      <!-- Add Activity Form -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">发布新活动</h2>
+        <form id="activityForm" method="POST" action="/api/admin/activities" enctype="multipart/form-data" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">标识符 (Slug)</label>
+              <input type="text" name="slug" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="activity-slug" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+              <select name="category_id" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                <option value="">请选择分类</option>
+                {categories.map((cat) => (
+                  <option value={cat.id}>{cat.icon} {cat.slug}</option>
+                ))}
+              </select>
+              {categories.length === 0 && (
+                <p class="mt-1 text-xs text-red-600">暂无分类，请先创建活动分类</p>
+              )}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">发布时间</label>
+              <input type="datetime-local" name="published_at" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div class="flex items-end gap-4">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" name="is_featured" value="1" class="rounded" />
+                <span class="text-sm font-medium text-gray-700">推荐活动</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" name="is_active" value="1" checked class="rounded" />
+                <span class="text-sm font-medium text-gray-700">立即发布</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">标题 (中文)</label>
+              <input type="text" name="title_zh" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">标题 (EN)</label>
+              <input type="text" name="title_en" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (中文)</label>
+              <input type="text" name="slug_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (EN)</label>
+              <input type="text" name="slug_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (中文)</label>
+              <input type="text" name="description_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="用于列表展示和SEO描述" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (EN)</label>
+              <input type="text" name="description_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Short description for lists and SEO" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">内容 (中文)</label>
+              <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="请输入活动详细内容，支持标题、列表、引用、图片等格式">
+                <input type="hidden" name="content_zh" data-rich-text-input value="" />
+                <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+                <div data-rich-text-editor></div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">支持标题、加粗、列表、引用、代码块、图片等格式。</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Content (EN)</label>
+              <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="Enter detailed activity content with headings, lists, quotes, images, and more">
+                <input type="hidden" name="content_en" data-rich-text-input value="" />
+                <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+                <div data-rich-text-editor></div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Supports headings, emphasis, lists, quotes, code blocks, images, and more.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SEO 标题 (中文)</label>
+              <input type="text" name="meta_title_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用活动标题" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SEO Title (EN)</label>
+              <input type="text" name="meta_title_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use activity title" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SEO 描述 (中文)</label>
+              <input type="text" name="meta_desc_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用简短描述" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SEO Description (EN)</label>
+              <input type="text" name="meta_desc_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use short description" />
+            </div>
+          </div>
+
+          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
+            发布活动
+          </button>
+        </form>
+      </div>
+
+      <!-- Activity List -->
+      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">ID</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">标题</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">分类</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">发布时间</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">状态</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">浏览</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {allActivities.length === 0 ? (
+                <tr>
+                  <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                    暂无活动
+                  </td>
+                </tr>
+              ) : (
+                allActivities.map((activity) => (
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-500">{activity.id}</td>
+                    <td class="px-4 py-3 font-medium">
+                      {activity.titleZh || activity.slug}
+                      {activity.isFeatured && <span class="ml-2 text-yellow-600">⭐</span>}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="text-xs">
+                        {activity.categoryIcon} {activity.categorySlug}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">
+                      {new Date(activity.publishedAt).toLocaleDateString('zh-CN')}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class:list={[
+                        'text-xs px-2 py-0.5 rounded',
+                        activity.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
+                      ]}>
+                        {activity.isActive ? '已发布' : '草稿'}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">{activity.viewCount}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <a href={`/admin/activities/edit/${activity.id}`} class="text-blue-600 hover:underline text-xs">
+                          编辑
+                        </a>
+                        <form class="delete-form" method="POST" action={`/api/admin/activities?id=${activity.id}&_method=DELETE`} class="inline">
+                          <button type="submit" class="text-red-600 hover:underline text-xs">
+                            删除
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      import { initAdminRichTextEditors } from '../../../scripts/admin-rich-text';
+      initAdminRichTextEditors();
+
+      // Handle form submission with redirect
+      document.getElementById('activityForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        submitBtn.textContent = '发布中...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/admin/activities', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            // Success - redirect back to admin activities page
+            window.location.href = '/admin/activities/?msg=created';
+          } else {
+            const error = await response.json();
+            alert('发布失败: ' + (error.error || '未知错误'));
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('发布活动时出错:', error);
+          alert('发布活动时出错，请重试');
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+
+      // Handle delete forms
+      document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          if (!confirm('确定要删除这个活动吗？')) {
+            return;
+          }
+
+          const formData = new FormData(form);
+          const action = form.action;
+          const deleteBtn = form.querySelector('button');
+          const originalText = deleteBtn.textContent;
+
+          deleteBtn.textContent = '删除中...';
+          deleteBtn.disabled = true;
+
+          try {
+            const response = await fetch(action, {
+              method: 'POST',
+              body: formData
+            });
+
+            if (response.ok) {
+              // Success - redirect back to admin activities page
+              window.location.href = '/admin/activities/?msg=deleted';
+            } else {
+              const error = await response.json();
+              alert('删除失败: ' + (error.error || '未知错误'));
+              deleteBtn.textContent = originalText;
+              deleteBtn.disabled = false;
+            }
+          } catch (error) {
+            console.error('删除活动时出错:', error);
+            alert('删除活动时出错，请重试');
+            deleteBtn.textContent = originalText;
+            deleteBtn.disabled = false;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

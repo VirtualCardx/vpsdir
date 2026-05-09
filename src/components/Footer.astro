@@ -7,10 +7,42 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+const currentYear = new Date().getFullYear();
 ---
 
-<footer class="border-t border-gray-200 py-6 mt-auto">
-  <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-    &copy; {new Date().getFullYear()} {t(lang, 'site.title')}
+<footer class="bg-white border-t border-gray-200 py-8 mt-12">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+      <div>
+        <h3 class="font-semibold text-gray-900 mb-4">{t(lang, 'site.title')}</h3>
+        <p class="text-sm text-gray-600">{t(lang, 'site.description')}</p>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-900 mb-4">{lang === 'zh' ? '快速链接' : 'Quick Links'}</h3>
+        <ul class="space-y-2">
+          <li>
+            <a href={`/${lang}/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              {t(lang, 'nav.home')}
+            </a>
+          </li>
+          <li>
+            <a href={`/${lang}/activities/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              {t(lang, 'nav.activities')}
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-900 mb-4">{lang === 'zh' ? '关于' : 'About'}</h3>
+        <p class="text-sm text-gray-600">
+          {lang === 'zh' ? '为您推荐最佳的VPS和服务商' : 'Recommending the best VPS and service providers for you'}
+        </p>
+      </div>
+    </div>
+    <div class="pt-8 border-t border-gray-200 text-center">
+      <p class="text-sm text-gray-500">
+        &copy; {currentYear} {t(lang, 'site.title')}. {lang === 'zh' ? '保留所有权利。' : 'All rights reserved.'}
+      </p>
+    </div>
   </div>
 </footer>

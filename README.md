@@ -2,7 +2,7 @@
 
 [中文文档](README.zh-CN.md)
 
-A minimal, high-performance bilingual (Chinese/English) service provider directory website, fully hosted on Cloudflare infrastructure within Free Tier limits.
+A minimal, high-performance bilingual (Chinese/English) directory and content site for service providers and activities, fully hosted on Cloudflare infrastructure within Free Tier limits.
 
 ## Tech Stack
 
@@ -12,6 +12,7 @@ A minimal, high-performance bilingual (Chinese/English) service provider directo
 - **Storage**: Cloudflare R2 (logo images)
 - **Cache**: Cloudflare KV (data cache)
 - **Styling**: Tailwind CSS v4
+- **Editor**: TipTap rich text editor for admin activity content
 - **Security**: Web Crypto API (PBKDF2 password hashing, HMAC session signing)
 
 ## Project Structure
@@ -22,18 +23,19 @@ A minimal, high-performance bilingual (Chinese/English) service provider directo
 │   ├── prebuild.mjs       # Exports D1 providers to JSON for SSG getStaticPaths
 │   └── seed.mjs           # Seeds admin user + sample providers into local D1
 ├── src/
-│   ├── components/        # Astro components (Header, Footer, SEO, ProviderCard, etc.)
+│   ├── components/        # Astro components (Header, Footer, SEO, ProviderCard, AdminHeader, etc.)
 │   ├── data/              # Build-time generated provider data (providers.json)
-│   ├── db/schema.ts       # Drizzle ORM schema (providers, providers_content, users)
+│   ├── db/schema.ts       # Drizzle ORM schema (providers, activities, users, bilingual content tables)
 │   ├── i18n/              # i18n config, translations, and utilities
 │   ├── layouts/           # BaseLayout with SEO, hreflang, JSON-LD
-│   ├── lib/               # Core libraries (auth, cache, db, r2)
+│   ├── lib/               # Core libraries (auth, cache, db, r2, rich-text)
 │   ├── middleware.ts       # Route protection + locale redirect
 │   ├── pages/
-│   │   ├── [lang]/        # Public pages (home, provider detail) -- bilingual
-│   │   ├── admin/         # Admin panel (login, dashboard, edit)
-│   │   ├── api/           # API routes (auth, CRUD, cache refresh, logo serving)
+│   │   ├── [lang]/        # Public pages (home, provider detail, activities) -- bilingual
+│   │   ├── admin/         # Admin panel (login, providers, activities, edit pages)
+│   │   ├── api/           # API routes (auth, CRUD, cache refresh, uploads, asset serving)
 │   │   └── sitemap.xml.ts # Dynamic sitemap with hreflang alternates
+│   ├── scripts/           # Client-side admin scripts (rich text editor)
 │   └── styles/global.css  # Tailwind CSS entry
 ├── drizzle/migrations/    # Generated D1 migration SQL files
 ├── wrangler.jsonc         # Cloudflare Workers config (D1, KV, R2 bindings)
@@ -91,6 +93,13 @@ Or run all three in one command:
 npm run db:setup
 ```
 
+The activity migration also creates default activity categories:
+
+- `news`
+- `events`
+- `updates`
+- `announcements`
+
 ### 4. Configure secrets for local dev
 
 Create a `.dev.vars` file in the project root:
@@ -113,6 +122,15 @@ npx wrangler dev
 ```
 
 This starts the Worker at `http://localhost:8787`.
+
+### 6. Optional type and Astro checks
+
+`astro check` is not wired into the current dependencies by default. Install the required packages first if you want template/type validation:
+
+```bash
+npm install -D @astrojs/check typescript
+npx astro check
+```
 
 ## Production Deployment
 
@@ -184,6 +202,8 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | `/` | SSR | Redirects to `/zh/` |
 | `/zh/` `/en/` | SSR | Home page with provider listing (KV cached) |
 | `/zh/provider/[slug]` `/en/provider/[slug]` | SSG | Provider detail with JSON-LD + hreflang |
+| `/zh/activities/` `/en/activities/` | SSR | Activity listing page |
+| `/zh/activity/[slug]` `/en/activity/[slug]` | SSR | Activity detail page with bilingual content |
 | `/sitemap.xml` | SSR | Dynamic sitemap with bilingual alternates |
 | `/api/logo/[key]` | SSR | Serves logos from R2 with CDN cache headers |
 
@@ -193,6 +213,8 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 |---|---|
 | `/admin/login` | Admin login form |
 | `/admin/` | Dashboard -- provider list, add form, cache refresh |
+| `/admin/activities/` | Activity management -- list, create, delete |
+| `/admin/activities/edit/[id]` | Edit activity with bilingual rich text fields |
 | `/admin/edit/[id]` | Edit provider (bilingual fields, logo upload) |
 
 ### API
@@ -204,6 +226,11 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | `/api/admin/providers` | POST | Create provider |
 | `/api/admin/providers?id=X&_method=PUT` | POST | Update provider |
 | `/api/admin/providers?id=X&_method=DELETE` | POST | Delete provider |
+| `/api/admin/activities` | GET | Fetch activities for admin |
+| `/api/admin/activities` | POST | Create activity |
+| `/api/admin/activities?id=X&_method=PUT` | POST | Update activity |
+| `/api/admin/activities?id=X&_method=DELETE` | POST | Delete activity |
+| `/api/admin/upload-image` | POST | Upload rich text images to R2 |
 | `/api/admin/cache-refresh` | POST | Invalidate KV cache |
 
 ## Database Schema
@@ -216,6 +243,15 @@ Bilingual content (name, description, meta title, meta description) with a uniqu
 
 ### users
 Admin accounts with PBKDF2-hashed passwords.
+
+### activity_categories
+Activity category taxonomy used by admin and public activity pages.
+
+### activities
+Activity base records with category, publish time, featured flag, active flag, and view count.
+
+### activities_content
+Bilingual activity content (title, slug, description, rich text body, SEO fields) with a unique composite index on `(activity_id, lang)`.
 
 ## Security
 

@@ -37,3 +37,49 @@ export const users = sqliteTable('users', {
   password_hash: text('password_hash').notNull(),
   created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
 });
+
+// Activity categories (活动分类)
+export const activityCategories = sqliteTable('activity_categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull().unique(),
+  icon: text('icon'),
+  sort_order: integer('sort_order').notNull().default(0),
+  created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').notNull().default(sql`(datetime('now'))`),
+});
+
+// Activity content by language (活动内容)
+export const activitiesContent = sqliteTable(
+  'activities_content',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    activity_id: integer('activity_id')
+      .notNull()
+      .references(() => activities.id, { onDelete: 'cascade' }),
+    lang: text('lang').notNull(),
+    title: text('title').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description'),
+    content: text('content'),
+    meta_title: text('meta_title'),
+    meta_desc: text('meta_desc'),
+    created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
+    updated_at: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  },
+  (table) => [uniqueIndex('activity_lang_idx').on(table.activity_id, table.lang)],
+);
+
+// Activities (活动主表)
+export const activities = sqliteTable('activities', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  category_id: integer('category_id')
+    .notNull()
+    .references(() => activityCategories.id),
+  slug: text('slug').notNull().unique(),
+  published_at: text('published_at').notNull().default(sql`(datetime('now'))`),
+  is_featured: integer('is_featured', { mode: 'boolean' }).notNull().default(false),
+  is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  view_count: integer('view_count').notNull().default(0),
+  created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').notNull().default(sql`(datetime('now'))`),
+});

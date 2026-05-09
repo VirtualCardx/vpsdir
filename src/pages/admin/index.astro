@@ -1,5 +1,6 @@
 ---
 import '../../styles/global.css';
+import AdminHeader from '../../components/AdminHeader.astro';
 import { t } from '../../i18n/utils';
 import type { Locale } from '../../i18n/config';
 import { getDb } from '../../lib/db';
@@ -35,34 +36,38 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
     <title>{t(lang, 'admin.dashboard')}</title>
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900">
-    <header class="bg-white border-b border-gray-200">
-      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-        <h1 class="text-lg font-bold">{t(lang, 'admin.dashboard')}</h1>
-        <div class="flex items-center gap-4">
-          {lastUpdated && (
-            <span class="text-xs text-gray-400">
-              Last cache: {new Date(lastUpdated).toLocaleString('zh-CN')}
-            </span>
-          )}
-          <form method="POST" action="/api/admin/cache-refresh" class="inline">
-            <button
-              type="submit"
-              class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {t(lang, 'admin.refreshCache')}
-            </button>
-          </form>
-          <form method="POST" action="/api/auth/logout" class="inline">
-            <button
-              type="submit"
-              class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              {t(lang, 'admin.logout')}
-            </button>
-          </form>
-        </div>
-      </div>
-    </header>
+    <AdminHeader
+      title={t(lang, 'admin.dashboard')}
+      subtitle="统一管理服务商与活动内容"
+      navItems={[
+        { href: '/admin/', label: t(lang, 'admin.dashboard'), current: true },
+        { href: '/admin/activities/', label: '活动管理' },
+      ]}
+    >
+      <Fragment slot="actions">
+        {lastUpdated && (
+          <span class="text-xs text-gray-400">
+            Last cache: {new Date(lastUpdated).toLocaleString('zh-CN')}
+          </span>
+        )}
+        <form method="POST" action="/api/admin/cache-refresh" class="inline">
+          <button
+            type="submit"
+            class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            {t(lang, 'admin.refreshCache')}
+          </button>
+        </form>
+        <form method="POST" action="/api/auth/logout" class="inline">
+          <button
+            type="submit"
+            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {t(lang, 'admin.logout')}
+          </button>
+        </form>
+      </Fragment>
+    </AdminHeader>
 
     <main class="container mx-auto px-4 py-6">
       {message && (
@@ -143,11 +148,19 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (中文)</label>
-              <textarea name="desc_zh" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm"></textarea>
+              <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="请输入服务商中文描述，支持标题、列表、引用、代码块和图片">
+                <input type="hidden" name="desc_zh" data-rich-text-input value="" />
+                <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+                <div data-rich-text-editor></div>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (EN)</label>
-              <textarea name="desc_en" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm"></textarea>
+              <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="Enter the provider description in English with headings, lists, quotes, code blocks, and images">
+                <input type="hidden" name="desc_en" data-rich-text-input value="" />
+                <div class="tiptap-toolbar" data-rich-text-toolbar></div>
+                <div data-rich-text-editor></div>
+              </div>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -237,6 +250,9 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
     </main>
 
     <script>
+      import { initAdminRichTextEditors } from '../../scripts/admin-rich-text';
+      initAdminRichTextEditors();
+
       // Tag management
       const tagsInput = document.getElementById('tags-input-add');
       const tagsContainer = document.getElementById('tags-container-add');

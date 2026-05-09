@@ -7,6 +7,7 @@ import { getDb } from '../../../lib/db';
 import { providers, providersContent } from '../../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
+import { sanitizeRichText, richTextToPlainText } from '../../../lib/rich-text';
 
 const lang = Astro.params.lang as string;
 if (!isValidLocale(lang)) {
@@ -37,8 +38,9 @@ const content = await db
 
 const name = content?.name || (lang === 'zh' ? provider.slug_zh : provider.slug_en);
 const desc = content?.desc;
+const descText = richTextToPlainText(desc);
 const metaTitle = content?.meta_title || name;
-const metaDesc = content?.meta_desc || desc || '';
+const metaDesc = content?.meta_desc || descText || '';
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 
 const siteUrl = Astro.url.origin;
@@ -54,7 +56,7 @@ const jsonLd = {
   '@type': 'Organization',
   name,
   url: provider.url,
-  description: desc || undefined,
+  description: descText || undefined,
   aggregateRating: provider.rating
     ? { '@type': 'AggregateRating', ratingValue: provider.rating, bestRating: 5 }
     : undefined,
@@ -109,7 +111,7 @@ const jsonLd = {
       {desc && (
         <div class="mt-6 pt-6 border-t border-gray-100">
           <h2 class="text-lg font-semibold text-gray-800 mb-2">{t(lang, 'provider.description')}</h2>
-          <p class="text-gray-600 leading-relaxed whitespace-pre-line">{desc}</p>
+          <div class="prose prose-sm max-w-none text-gray-600" set:html={sanitizeRichText(desc) || ''} />
         </div>
       )}
 

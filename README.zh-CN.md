@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-一个极简、高性能的中英双语服务商目录网站，完全托管在 Cloudflare 基础设施上，符合免费套餐限制。
+一个极简、高性能的中英双语服务商与活动内容网站，完全托管在 Cloudflare 基础设施上，符合免费套餐限制。
 
 ## 技术栈
 
@@ -12,6 +12,7 @@
 - **存储**: Cloudflare R2 (Logo 图片)
 - **缓存**: Cloudflare KV (数据缓存)
 - **样式**: Tailwind CSS v4
+- **编辑器**: TipTap 富文本编辑器，用于后台活动内容编辑
 - **安全**: Web Crypto API (PBKDF2 密码哈希, HMAC 会话签名)
 
 ## 项目结构
@@ -22,18 +23,19 @@
 │   ├── prebuild.mjs       # 从 D1 导出服务商数据到 JSON, 供 SSG getStaticPaths 使用
 │   └── seed.mjs           # 向本地 D1 写入管理员用户和示例服务商数据
 ├── src/
-│   ├── components/        # Astro 组件 (Header, Footer, SEO, ProviderCard 等)
+│   ├── components/        # Astro 组件 (Header, Footer, SEO, ProviderCard, AdminHeader 等)
 │   ├── data/              # 构建时生成的服务商数据 (providers.json)
-│   ├── db/schema.ts       # Drizzle ORM 数据库模型 (providers, providers_content, users)
+│   ├── db/schema.ts       # Drizzle ORM 数据库模型 (providers, activities, users 及双语内容表)
 │   ├── i18n/              # 国际化配置、翻译文件和工具函数
 │   ├── layouts/           # BaseLayout, 含 SEO、hreflang、JSON-LD
-│   ├── lib/               # 核心库 (auth, cache, db, r2)
+│   ├── lib/               # 核心库 (auth, cache, db, r2, rich-text)
 │   ├── middleware.ts       # 路由保护 + 语言重定向
 │   ├── pages/
-│   │   ├── [lang]/        # 公开页面 (首页, 服务商详情) -- 双语
-│   │   ├── admin/         # 管理后台 (登录, 仪表盘, 编辑)
-│   │   ├── api/           # API 路由 (认证, CRUD, 缓存刷新, Logo 服务)
+│   │   ├── [lang]/        # 公开页面 (首页, 服务商详情, 活动) -- 双语
+│   │   ├── admin/         # 管理后台 (登录, 服务商, 活动, 编辑页)
+│   │   ├── api/           # API 路由 (认证, CRUD, 缓存刷新, 上传, 资源服务)
 │   │   └── sitemap.xml.ts # 动态站点地图, 含 hreflang 备用链接
+│   ├── scripts/           # 后台前端脚本 (富文本编辑器等)
 │   └── styles/global.css  # Tailwind CSS 入口
 ├── drizzle/migrations/    # 生成的 D1 迁移 SQL 文件
 ├── wrangler.jsonc         # Cloudflare Workers 配置 (D1, KV, R2 绑定)
@@ -91,6 +93,13 @@ npm run db:seed
 npm run db:setup
 ```
 
+活动模块的迁移还会自动创建默认活动分类：
+
+- `news`
+- `events`
+- `updates`
+- `announcements`
+
 ### 4. 配置本地开发密钥
 
 在项目根目录创建 `.dev.vars` 文件：
@@ -113,6 +122,15 @@ npx wrangler dev
 ```
 
 Worker 地址：`http://localhost:8787`。
+
+### 6. 可选的类型与 Astro 校验
+
+当前项目默认依赖中未包含 `astro check` 所需包。如果你要执行模板和类型校验，请先安装：
+
+```bash
+npm install -D @astrojs/check typescript
+npx astro check
+```
 
 ## 生产部署
 
@@ -163,59 +181,83 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 
 ## NPM 脚本
 
-| 脚本 | 说明 |
-|---|---|
-| `npm run dev` | 启动 Astro 开发服务器 |
-| `npm run build` | 清理 + 预构建 SSG 数据 + 生产构建 |
-| `npm run preview` | 本地预览构建产物 |
-| `npm run clean` | 终止残留 workerd 进程并删除 dist/ |
-| `npm run deploy` | 构建并部署到 Cloudflare Workers |
-| `npm run db:generate` | 生成 Drizzle 迁移 SQL |
-| `npm run db:migrate` | 将迁移应用到本地 D1 |
-| `npm run db:seed` | 写入管理员用户和示例数据 |
-| `npm run db:setup` | 生成 + 迁移 + 写入数据 (一键执行) |
+| 脚本                    | 说明                        |
+| --------------------- | ------------------------- |
+| `npm run dev`         | 启动 Astro 开发服务器            |
+| `npm run build`       | 清理 + 预构建 SSG 数据 + 生产构建    |
+| `npm run preview`     | 本地预览构建产物                  |
+| `npm run clean`       | 终止残留 workerd 进程并删除 dist/  |
+| `npm run deploy`      | 构建并部署到 Cloudflare Workers |
+| `npm run db:generate` | 生成 Drizzle 迁移 SQL         |
+| `npm run db:migrate`  | 将迁移应用到本地 D1               |
+| `npm run db:seed`     | 写入管理员用户和示例数据              |
+| `npm run db:setup`    | 生成 + 迁移 + 写入数据 (一键执行)     |
 
 ## 路由
 
 ### 公开页面
 
-| 路由 | 模式 | 说明 |
-|---|---|---|
-| `/` | SSR | 重定向到 `/zh/` |
-| `/zh/` `/en/` | SSR | 首页, 服务商列表 (KV 缓存) |
+| 路由                                          | 模式  | 说明                          |
+| ------------------------------------------- | --- | --------------------------- |
+| `/`                                         | SSR | 重定向到 `/zh/`                 |
+| `/zh/` `/en/`                               | SSR | 首页, 服务商列表 (KV 缓存)           |
 | `/zh/provider/[slug]` `/en/provider/[slug]` | SSG | 服务商详情, 含 JSON-LD + hreflang |
-| `/sitemap.xml` | SSR | 动态站点地图, 含双语备用链接 |
-| `/api/logo/[key]` | SSR | 从 R2 提供 Logo, 带 CDN 缓存头 |
+| `/zh/activities/` `/en/activities/`         | SSR | 活动列表页                       |
+| `/zh/activity/[slug]` `/en/activity/[slug]` | SSR | 活动详情页, 支持双语内容               |
+| `/sitemap.xml`                              | SSR | 动态站点地图, 含双语备用链接             |
+| `/api/logo/[key]`                           | SSR | 从 R2 提供 Logo, 带 CDN 缓存头     |
 
 ### 管理后台
 
-| 路由 | 说明 |
-|---|---|
-| `/admin/login` | 管理员登录 |
-| `/admin/` | 仪表盘 -- 服务商列表、添加表单、缓存刷新 |
-| `/admin/edit/[id]` | 编辑服务商 (双语字段, Logo 上传) |
+| 路由                            | 说明                     |
+| ----------------------------- | ---------------------- |
+| `/admin/login`                | 管理员登录                  |
+| `/admin/`                     | 仪表盘 -- 服务商列表、添加表单、缓存刷新 |
+| `/admin/activities/`          | 活动管理 -- 列表、新建、删除       |
+| `/admin/activities/edit/[id]` | 编辑活动，支持双语富文本字段         |
+| `/admin/edit/[id]`            | 编辑服务商 (双语字段, Logo 上传)  |
 
 ### API
 
-| 端点 | 方法 | 说明 |
-|---|---|---|
-| `/api/auth/login` | POST | 管理员认证 (PBKDF2) |
-| `/api/auth/logout` | POST | 清除会话 Cookie |
-| `/api/admin/providers` | POST | 创建服务商 |
-| `/api/admin/providers?id=X&_method=PUT` | POST | 更新服务商 |
-| `/api/admin/providers?id=X&_method=DELETE` | POST | 删除服务商 |
-| `/api/admin/cache-refresh` | POST | 清除 KV 缓存 |
+| 端点                                          | 方法   | 说明             |
+| ------------------------------------------- | ---- | -------------- |
+| `/api/auth/login`                           | POST | 管理员认证 (PBKDF2) |
+| `/api/auth/logout`                          | POST | 清除会话 Cookie    |
+| `/api/admin/providers`                      | POST | 创建服务商          |
+| `/api/admin/providers?id=X&_method=PUT`     | POST | 更新服务商          |
+| `/api/admin/providers?id=X&_method=DELETE`  | POST | 删除服务商          |
+| `/api/admin/activities`                     | GET  | 后台读取活动列表       |
+| `/api/admin/activities`                     | POST | 创建活动           |
+| `/api/admin/activities?id=X&_method=PUT`    | POST | 更新活动           |
+| `/api/admin/activities?id=X&_method=DELETE` | POST | 删除活动           |
+| `/api/admin/upload-image`                   | POST | 上传富文本图片到 R2    |
+| `/api/admin/cache-refresh`                  | POST | 清除 KV 缓存       |
 
 ## 数据库模型
 
 ### providers
+
 服务商核心信息，包含唯一的双语 slug (`slug_zh`, `slug_en`)、URL、分类、评分、Logo 键名和启用状态。
 
-### providers_content
+### providers\_content
+
 双语内容 (名称、描述、SEO 标题、SEO 描述)，`(provider_id, lang)` 有唯一复合索引。
 
 ### users
+
 管理员账户，密码使用 PBKDF2 哈希存储。
+
+### activity\_categories
+
+活动分类表，供后台管理和前台活动页面使用。
+
+### activities
+
+活动主表，包含分类、发布时间、推荐状态、启用状态和浏览量等字段。
+
+### activities\_content
+
+活动双语内容表，包含标题、slug、摘要、富文本正文和 SEO 字段，`(activity_id, lang)` 上有唯一复合索引。
 
 ## 安全机制
 
@@ -226,11 +268,11 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 
 ## Cloudflare 免费套餐合规
 
-| 服务 | 免费套餐限制 |
-|---|---|
-| D1 | 每天 500 万行读取, 10 万行写入 |
-| KV | 每天 10 万次读取, 1000 次写入 |
-| R2 | 每月 1000 万次 A 类操作, 1000 万次 B 类操作 |
-| Workers | 每天 10 万次请求 |
+| 服务      | 免费套餐限制                          |
+| ------- | ------------------------------- |
+| D1      | 每天 500 万行读取, 10 万行写入            |
+| KV      | 每天 10 万次读取, 1000 次写入            |
+| R2      | 每月 1000 万次 A 类操作, 1000 万次 B 类操作 |
+| Workers | 每天 10 万次请求                      |
 
 架构设计通过 KV 缓存减少 D1 读取、批量操作减少写入、SSG 预渲染详情页减少 Worker 调用，以充分利用免费套餐额度。

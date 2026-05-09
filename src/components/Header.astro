@@ -8,18 +8,24 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+const currentYear = new Date().getFullYear();
 ---
 
-<header class="border-b border-gray-200 bg-white">
-  <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-    <a href={`/${lang}/`} class="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
-      {t(lang, 'site.title')}
-    </a>
-    <nav class="flex items-center gap-6">
-      <a href={`/${lang}/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-        {t(lang, 'nav.home')}
+<header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-4">
+    <nav class="flex items-center justify-between">
+      <a href={`/${lang}/`} class="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors">
+        {t(lang, 'site.title')}
       </a>
-      <LanguageSwitcher lang={lang} />
+      <div class="flex items-center gap-6">
+        <a href={`/${lang}/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+          {t(lang, 'nav.home')}
+        </a>
+        <a href={`/${lang}/activities/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+          {t(lang, 'nav.activities')}
+        </a>
+        <LanguageSwitcher lang={lang} />
+      </div>
     </nav>
   </div>
 </header>
