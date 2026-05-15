@@ -1,1 +1,177 @@
 @import "tailwindcss";
+
+:root {
+  --theme-accent: #f10c00;
+  --theme-surface: #fcf5e2;
+  --theme-page-bg: #fffdf8;
+  --theme-card-bg: #fcf5e2;
+  --theme-primary: #0f325b;
+  --theme-nav-bg: #0b2340;
+  --theme-nav-border: #1d466f;
+  --theme-nav-text: #fcf5e2;
+  --theme-nav-muted: #b7c7da;
+  --theme-accent-hover: #cc0a00;
+  --theme-primary-hover: #174775;
+  --theme-primary-soft: #e4edf7;
+  --theme-accent-soft: #fee3de;
+  --theme-border: #d8d2c4;
+  --theme-text-muted: #51627a;
+}
+
+html {
+  background-color: var(--theme-page-bg);
+}
+
+body {
+  background-color: var(--theme-page-bg);
+  color: var(--theme-primary);
+}
+
+.bg-gray-50 {
+  background-color: var(--theme-page-bg);
+}
+
+.bg-gray-900 {
+  background-color: var(--theme-primary);
+}
+
+.hover\:bg-gray-700:hover {
+  background-color: var(--theme-primary-hover);
+}
+
+.text-gray-900 {
+  color: var(--theme-primary);
+}
+
+.text-gray-800 {
+  color: var(--theme-primary);
+}
+
+.text-gray-700,
+.text-gray-600,
+.text-gray-500 {
+  color: var(--theme-text-muted);
+}
+
+.border-gray-200,
+.border-gray-300,
+.border-gray-100 {
+  border-color: var(--theme-border);
+}
+
+.bg-blue-600,
+.bg-blue-500 {
+  background-color: var(--theme-accent);
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: var(--theme-accent-hover);
+}
+
+.text-blue-700,
+.text-blue-600 {
+  color: var(--theme-accent);
+}
+
+.bg-blue-100,
+.bg-blue-50 {
+  background-color: var(--theme-accent-soft);
+}
+
+.border-blue-200,
+.border-blue-300,
+.border-blue-400 {
+  border-color: #f6aa9f;
+}
+
+.hover\:border-blue-300:hover,
+.hover\:border-blue-400:hover {
+  border-color: var(--theme-accent);
+}
+
+.focus\:ring-blue-500:focus,
+.focus\:border-blue-500:focus {
+  --tw-ring-color: color-mix(in srgb, var(--theme-accent) 28%, transparent);
+  border-color: var(--theme-accent);
+}
+
+.focus\:ring-gray-900:focus {
+  --tw-ring-color: color-mix(in srgb, var(--theme-primary) 24%, transparent);
+}
+
+.hover\:text-blue-600:hover,
+.hover\:text-gray-900:hover,
+.hover\:text-gray-700:hover {
+  color: var(--theme-accent);
+}
+
+.bg-white {
+  background-color: var(--theme-card-bg);
+}
+
+.bg-gray-100 {
+  background-color: var(--theme-primary-soft);
+}
+
+.prose a {
+  color: var(--theme-accent);
+}
+
+.site-nav,
+.admin-nav-shell {
+  background-color: var(--theme-nav-bg);
+  border-color: var(--theme-nav-border);
+  color: var(--theme-nav-text);
+}
+
+.site-nav a,
+.admin-nav-shell a,
+.site-nav h1,
+.admin-nav-shell h1 {
+  color: inherit;
+}
+
+.site-nav .nav-link,
+.admin-nav-shell .nav-link,
+.admin-nav-shell .nav-subtitle,
+.admin-nav-shell .nav-action,
+.site-nav .nav-action {
+  color: var(--theme-nav-muted);
+}
+
+.site-nav .nav-link:hover,
+.site-nav .nav-brand:hover,
+.site-nav .nav-action:hover,
+.admin-nav-shell .nav-link:hover,
+.admin-nav-shell .nav-action:hover {
+  color: var(--theme-accent);
+}
+
+.site-nav .nav-pill,
+.admin-nav-shell .nav-pill {
+  background-color: rgba(252, 245, 226, 0.08);
+  color: var(--theme-nav-muted);
+  border: 1px solid rgba(252, 245, 226, 0.12);
+}
+
+.site-nav .nav-pill:hover,
+.admin-nav-shell .nav-pill:hover {
+  background-color: rgba(252, 245, 226, 0.14);
+  color: var(--theme-nav-text);
+}
+
+.site-nav .nav-pill.is-current,
+.admin-nav-shell .nav-pill.is-current {
+  background-color: var(--theme-accent);
+  color: #fff;
+  border-color: var(--theme-accent);
+}
+
+.site-nav .nav-outline {
+  border-color: rgba(252, 245, 226, 0.22);
+}
+
+.site-nav .nav-outline:hover,
+.admin-nav-shell .nav-outline:hover {
+  border-color: var(--theme-accent);
+}

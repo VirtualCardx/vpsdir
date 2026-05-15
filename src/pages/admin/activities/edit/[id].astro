@@ -49,6 +49,7 @@ const categories = await db.select().from(activityCategories).orderBy(activityCa
       navItems={[
         { href: '/admin/', label: t(lang, 'admin.dashboard') },
         { href: '/admin/activities/', label: '活动管理', current: true },
+        { href: '/admin/settings', label: t(lang, 'admin.userSettings') },
       ]}
     >
       <Fragment slot="actions">

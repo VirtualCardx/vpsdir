@@ -15,8 +15,8 @@ const labels: Record<string, string> = { zh: '中文', en: 'EN' };
     <a
       href={getAlternateUrl(Astro.url, locale)}
       class:list={[
-        'text-sm px-2 py-1 rounded transition-colors',
-        locale === lang ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100',
+        'nav-pill text-sm px-2 py-1 rounded transition-colors',
+        locale === lang && 'is-current',
       ]}
     >
       {labels[locale]}

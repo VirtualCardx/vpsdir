@@ -26,8 +26,12 @@ const slug = lang === 'zh' ? provider.slug_zh : provider.slug_en;
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 const descText = richTextToPlainText(content.desc);
 
-// Parse tags JSON
-const tags = provider.tags ? JSON.parse(provider.tags) as string[] : [];
+// Parse tags JSON (supports both old flat array and new bilingual format)
+const rawTags = provider.tags ? JSON.parse(provider.tags) : [];
+const tags = rawTags.map(tag => {
+  if (typeof tag === 'string') return tag;
+  return tag[lang] || tag.zh || tag.en || '';
+});
 ---
 
 <a

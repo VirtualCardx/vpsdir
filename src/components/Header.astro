@@ -11,17 +11,17 @@ const { lang } = Astro.props;
 const currentYear = new Date().getFullYear();
 ---
 
-<header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+<header class="site-nav border-b sticky top-0 z-50">
   <div class="container mx-auto px-4 py-4">
     <nav class="flex items-center justify-between">
-      <a href={`/${lang}/`} class="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors">
+      <a href={`/${lang}/`} class="nav-brand text-lg font-bold transition-colors">
         {t(lang, 'site.title')}
       </a>
       <div class="flex items-center gap-6">
-        <a href={`/${lang}/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+        <a href={`/${lang}/`} class="nav-link text-sm transition-colors">
           {t(lang, 'nav.home')}
         </a>
-        <a href={`/${lang}/activities/`} class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+        <a href={`/${lang}/activities/`} class="nav-link text-sm transition-colors">
           {t(lang, 'nav.activities')}
         </a>
         <LanguageSwitcher lang={lang} />

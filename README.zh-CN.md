@@ -2,29 +2,43 @@
 
 [English](README.md)
 
-一个极简、高性能的中英双语服务商与活动内容网站，完全托管在 Cloudflare 基础设施上，符合免费套餐限制。
+这是一个基于 Astro 和 Cloudflare 构建的中英双语服务商目录与活动发布网站。它同时包含面向访客的公开站点、用于管理服务商与活动内容的后台，以及围绕 Cloudflare 免费套餐设计的轻量部署方案。
+
+## 项目亮点
+
+- 提供中英双语的服务商列表、服务商详情页和活动内容页面
+- 后台支持服务商管理、活动管理、分类管理与当前用户密码修改
+- 原生使用 Cloudflare D1、KV、R2 与 Workers 组成完整站点能力
+- 使用 PBKDF2 密码哈希与 HMAC 签名会话实现轻量认证
+- 采用深色导航、暖色卡片和双语界面的自定义主题风格
 
 ## 技术栈
 
-- **框架**: [Astro](https://astro.build/) v6 (混合渲染 -- 详情页 SSG，管理后台 SSR)
+- **框架**: [Astro](https://astro.build/) v6 (`output: 'server'`，运行在 Cloudflare Workers 上)
 - **适配器**: [@astrojs/cloudflare](https://docs.astro.build/en/guides/integrations-guide/cloudflare/) v13 (Workers 部署)
 - **数据库**: Cloudflare D1 + [Drizzle ORM](https://orm.drizzle.team/)
 - **存储**: Cloudflare R2 (Logo 图片)
 - **缓存**: Cloudflare KV (数据缓存)
-- **样式**: Tailwind CSS v4
+- **样式**: Tailwind CSS v4 + 基于 CSS 变量的自定义主题
 - **编辑器**: TipTap 富文本编辑器，用于后台活动内容编辑
 - **安全**: Web Crypto API (PBKDF2 密码哈希, HMAC 会话签名)
+
+## 当前主题
+
+- **强调色**: `#f10c00`
+- **主色**: `#0f325b`
+- **深色导航**: `#0b2340`
+- **页面背景**: `#fffdf8`
+- **卡片背景**: `#fcf5e2`
 
 ## 项目结构
 
 ```
 ├── scripts/
 │   ├── clean.mjs          # 构建前清理 (终止残留 workerd 进程, 删除 dist/)
-│   ├── prebuild.mjs       # 从 D1 导出服务商数据到 JSON, 供 SSG getStaticPaths 使用
 │   └── seed.mjs           # 向本地 D1 写入管理员用户和示例服务商数据
 ├── src/
 │   ├── components/        # Astro 组件 (Header, Footer, SEO, ProviderCard, AdminHeader 等)
-│   ├── data/              # 构建时生成的服务商数据 (providers.json)
 │   ├── db/schema.ts       # Drizzle ORM 数据库模型 (providers, activities, users 及双语内容表)
 │   ├── i18n/              # 国际化配置、翻译文件和工具函数
 │   ├── layouts/           # BaseLayout, 含 SEO、hreflang、JSON-LD
@@ -32,7 +46,7 @@
 │   ├── middleware.ts       # 路由保护 + 语言重定向
 │   ├── pages/
 │   │   ├── [lang]/        # 公开页面 (首页, 服务商详情, 活动) -- 双语
-│   │   ├── admin/         # 管理后台 (登录, 服务商, 活动, 编辑页)
+│   │   ├── admin/         # 管理后台 (登录, 服务商管理, 活动管理, 用户设置, 编辑页)
 │   │   ├── api/           # API 路由 (认证, CRUD, 缓存刷新, 上传, 资源服务)
 │   │   └── sitemap.xml.ts # 动态站点地图, 含 hreflang 备用链接
 │   ├── scripts/           # 后台前端脚本 (富文本编辑器等)
@@ -154,15 +168,7 @@ wrangler secret put ADMIN_SESSION_SECRET
 npm run deploy
 ```
 
-执行流程：`clean` -> `prebuild` (导出 D1 数据供 SSG) -> `astro build` -> `wrangler deploy`。
-
-> **注意**：`prebuild` 步骤从**本地** D1 读取数据生成静态服务商详情页。如需使用生产数据构建，先将远程 D1 导出并导入本地：
->
-> ```bash
-> wrangler d1 export vpsdir-db --remote --output=backup.sql
-> wrangler d1 execute vpsdir-db --local --file=backup.sql
-> npm run deploy
-> ```
+执行流程：`clean` -> `astro build` -> `wrangler deploy`。
 
 ### 4. 初始化远程数据库 (仅首次部署)
 
@@ -184,7 +190,7 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | 脚本                    | 说明                        |
 | --------------------- | ------------------------- |
 | `npm run dev`         | 启动 Astro 开发服务器            |
-| `npm run build`       | 清理 + 预构建 SSG 数据 + 生产构建    |
+| `npm run build`       | 清理 + 生产构建                 |
 | `npm run preview`     | 本地预览构建产物                  |
 | `npm run clean`       | 终止残留 workerd 进程并删除 dist/  |
 | `npm run deploy`      | 构建并部署到 Cloudflare Workers |
@@ -201,7 +207,7 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | ------------------------------------------- | --- | --------------------------- |
 | `/`                                         | SSR | 重定向到 `/zh/`                 |
 | `/zh/` `/en/`                               | SSR | 首页, 服务商列表 (KV 缓存)           |
-| `/zh/provider/[slug]` `/en/provider/[slug]` | SSG | 服务商详情, 含 JSON-LD + hreflang |
+| `/zh/provider/[slug]` `/en/provider/[slug]` | SSR | 服务商详情, 含 JSON-LD + hreflang |
 | `/zh/activities/` `/en/activities/`         | SSR | 活动列表页                       |
 | `/zh/activity/[slug]` `/en/activity/[slug]` | SSR | 活动详情页, 支持双语内容               |
 | `/sitemap.xml`                              | SSR | 动态站点地图, 含双语备用链接             |
@@ -212,10 +218,17 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | 路由                            | 说明                     |
 | ----------------------------- | ---------------------- |
 | `/admin/login`                | 管理员登录                  |
-| `/admin/`                     | 仪表盘 -- 服务商列表、添加表单、缓存刷新 |
+| `/admin/`                     | 服务商管理 -- 服务商列表、添加表单、缓存刷新 |
 | `/admin/activities/`          | 活动管理 -- 列表、新建、删除       |
 | `/admin/activities/edit/[id]` | 编辑活动，支持双语富文本字段         |
 | `/admin/edit/[id]`            | 编辑服务商 (双语字段, Logo 上传)  |
+| `/admin/settings`             | 用户设置 -- 修改当前用户密码       |
+
+## 后台功能
+
+- **服务商管理**: 新增、编辑、删除服务商，上传 Logo，刷新 KV 缓存
+- **活动管理**: 新增、编辑、删除活动，并管理活动分类
+- **用户设置**: 修改当前已登录管理员用户的密码
 
 ### API
 
@@ -223,6 +236,9 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | ------------------------------------------- | ---- | -------------- |
 | `/api/auth/login`                           | POST | 管理员认证 (PBKDF2) |
 | `/api/auth/logout`                          | POST | 清除会话 Cookie    |
+| `/api/auth/password`                        | POST | 修改当前用户密码       |
+| `/api/admin/activity-categories`            | GET  | 读取活动分类列表       |
+| `/api/admin/activity-categories`            | POST | 创建分类或通过 `_method=DELETE` 删除 |
 | `/api/admin/providers`                      | POST | 创建服务商          |
 | `/api/admin/providers?id=X&_method=PUT`     | POST | 更新服务商          |
 | `/api/admin/providers?id=X&_method=DELETE`  | POST | 删除服务商          |
@@ -275,4 +291,4 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | R2      | 每月 1000 万次 A 类操作, 1000 万次 B 类操作 |
 | Workers | 每天 10 万次请求                      |
 
-架构设计通过 KV 缓存减少 D1 读取、批量操作减少写入、SSG 预渲染详情页减少 Worker 调用，以充分利用免费套餐额度。
+架构设计通过 KV 缓存减少 D1 读写压力、轻量 SSR 页面和后台批量操作来控制资源消耗，以充分利用免费套餐额度。

@@ -100,6 +100,7 @@ const message = Astro.url.searchParams.get('msg');
       navItems={[
         { href: '/admin/', label: t(lang, 'admin.dashboard') },
         { href: '/admin/activities/', label: '活动管理', current: true },
+        { href: '/admin/settings', label: t(lang, 'admin.userSettings') },
       ]}
     >
       <Fragment slot="actions">

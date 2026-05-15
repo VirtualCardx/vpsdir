@@ -2,29 +2,43 @@
 
 [中文文档](README.zh-CN.md)
 
-A minimal, high-performance bilingual (Chinese/English) directory and content site for service providers and activities, fully hosted on Cloudflare infrastructure within Free Tier limits.
+A bilingual provider directory and activity publishing site built with Astro and Cloudflare. It includes a public-facing directory, an admin panel for provider and activity management, and a lightweight deployment model designed around Cloudflare free-tier services.
+
+## Highlights
+
+- Public bilingual site for provider listings, provider detail pages, and activity content
+- Admin panel for provider management, activity management, category management, and user password updates
+- Cloudflare-native stack with D1, KV, R2, and Workers
+- Lightweight auth based on PBKDF2 password hashing and HMAC-signed sessions
+- Custom theme with dark navigation, warm card surfaces, and bilingual UI copy
 
 ## Tech Stack
 
-- **Framework**: [Astro](https://astro.build/) v6 (Hybrid Rendering -- SSG for detail pages, SSR for admin)
+- **Framework**: [Astro](https://astro.build/) v6 (`output: 'server'`, rendered on Cloudflare Workers)
 - **Adapter**: [@astrojs/cloudflare](https://docs.astro.build/en/guides/integrations-guide/cloudflare/) v13 (Workers deployment)
 - **Database**: Cloudflare D1 + [Drizzle ORM](https://orm.drizzle.team/)
 - **Storage**: Cloudflare R2 (logo images)
 - **Cache**: Cloudflare KV (data cache)
-- **Styling**: Tailwind CSS v4
+- **Styling**: Tailwind CSS v4 + custom CSS variable theme
 - **Editor**: TipTap rich text editor for admin activity content
 - **Security**: Web Crypto API (PBKDF2 password hashing, HMAC session signing)
+
+## UI Theme
+
+- **Accent**: `#f10c00`
+- **Primary**: `#0f325b`
+- **Dark Navigation**: `#0b2340`
+- **Page Background**: `#fffdf8`
+- **Card Background**: `#fcf5e2`
 
 ## Project Structure
 
 ```
 ├── scripts/
 │   ├── clean.mjs          # Pre-build cleanup (kills zombie workerd, removes dist/)
-│   ├── prebuild.mjs       # Exports D1 providers to JSON for SSG getStaticPaths
 │   └── seed.mjs           # Seeds admin user + sample providers into local D1
 ├── src/
 │   ├── components/        # Astro components (Header, Footer, SEO, ProviderCard, AdminHeader, etc.)
-│   ├── data/              # Build-time generated provider data (providers.json)
 │   ├── db/schema.ts       # Drizzle ORM schema (providers, activities, users, bilingual content tables)
 │   ├── i18n/              # i18n config, translations, and utilities
 │   ├── layouts/           # BaseLayout with SEO, hreflang, JSON-LD
@@ -32,7 +46,7 @@ A minimal, high-performance bilingual (Chinese/English) directory and content si
 │   ├── middleware.ts       # Route protection + locale redirect
 │   ├── pages/
 │   │   ├── [lang]/        # Public pages (home, provider detail, activities) -- bilingual
-│   │   ├── admin/         # Admin panel (login, providers, activities, edit pages)
+│   │   ├── admin/         # Admin panel (login, provider management, activities, settings, edit pages)
 │   │   ├── api/           # API routes (auth, CRUD, cache refresh, uploads, asset serving)
 │   │   └── sitemap.xml.ts # Dynamic sitemap with hreflang alternates
 │   ├── scripts/           # Client-side admin scripts (rich text editor)
@@ -154,15 +168,7 @@ Use a strong random string (32+ characters) for `ADMIN_SESSION_SECRET`.
 npm run deploy
 ```
 
-This runs `clean` -> `prebuild` (exports D1 data for SSG) -> `astro build` -> `wrangler deploy`.
-
-> **Note**: The `prebuild` step reads from the **local** D1 database to generate static provider detail pages. To build with production data, first export the remote D1 and import locally:
->
-> ```bash
-> wrangler d1 export vpsdir-db --remote --output=backup.sql
-> wrangler d1 execute vpsdir-db --local --file=backup.sql
-> npm run deploy
-> ```
+This runs `clean` -> `astro build` -> `wrangler deploy`.
 
 ### 4. Seed the remote database (first deploy only)
 
@@ -184,7 +190,7 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | Script | Description |
 |---|---|
 | `npm run dev` | Start Astro dev server |
-| `npm run build` | Clean + prebuild SSG data + production build |
+| `npm run build` | Clean + production build |
 | `npm run preview` | Preview built site locally |
 | `npm run clean` | Kill zombie workerd processes and remove dist/ |
 | `npm run deploy` | Build and deploy to Cloudflare Workers |
@@ -201,7 +207,7 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 |---|---|---|
 | `/` | SSR | Redirects to `/zh/` |
 | `/zh/` `/en/` | SSR | Home page with provider listing (KV cached) |
-| `/zh/provider/[slug]` `/en/provider/[slug]` | SSG | Provider detail with JSON-LD + hreflang |
+| `/zh/provider/[slug]` `/en/provider/[slug]` | SSR | Provider detail with JSON-LD + hreflang |
 | `/zh/activities/` `/en/activities/` | SSR | Activity listing page |
 | `/zh/activity/[slug]` `/en/activity/[slug]` | SSR | Activity detail page with bilingual content |
 | `/sitemap.xml` | SSR | Dynamic sitemap with bilingual alternates |
@@ -212,10 +218,17 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 | Route | Description |
 |---|---|
 | `/admin/login` | Admin login form |
-| `/admin/` | Dashboard -- provider list, add form, cache refresh |
+| `/admin/` | Provider management -- provider list, add form, cache refresh |
 | `/admin/activities/` | Activity management -- list, create, delete |
 | `/admin/activities/edit/[id]` | Edit activity with bilingual rich text fields |
 | `/admin/edit/[id]` | Edit provider (bilingual fields, logo upload) |
+| `/admin/settings` | User settings -- change current user's password |
+
+## Admin Features
+
+- **Provider Management**: create, edit, delete providers, upload logos, refresh KV cache
+- **Activity Management**: create, edit, delete activities and manage activity categories
+- **User Settings**: change the currently signed-in admin user's password
 
 ### API
 
@@ -223,6 +236,9 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 |---|---|---|
 | `/api/auth/login` | POST | Authenticate admin (PBKDF2) |
 | `/api/auth/logout` | POST | Clear session cookie |
+| `/api/auth/password` | POST | Change current user's password |
+| `/api/admin/activity-categories` | GET | Fetch activity categories |
+| `/api/admin/activity-categories` | POST | Create category or delete via `_method=DELETE` |
 | `/api/admin/providers` | POST | Create provider |
 | `/api/admin/providers?id=X&_method=PUT` | POST | Update provider |
 | `/api/admin/providers?id=X&_method=DELETE` | POST | Delete provider |
@@ -269,4 +285,4 @@ Bilingual activity content (title, slug, description, rich text body, SEO fields
 | R2 | 10M Class A ops, 10M Class B ops per month |
 | Workers | 100K requests per day |
 
-The architecture minimizes D1 writes (KV caching for reads, batch operations) and uses SSG for detail pages to reduce Worker invocations.
+The architecture minimizes D1 reads and writes with KV caching, lightweight SSR pages, and batched administrative operations to stay within free-tier limits.

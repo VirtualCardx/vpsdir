@@ -9,7 +9,7 @@
 		{
 			"binding": "DB",
 			"database_name": "vpsdir-db",
-			"database_id": "62d71507-5e06-4af7-81ad-1d7eab2530e1",
+			"database_id": "c7fc250d-f7d0-460e-a59e-863e493f4368",
 			"migrations_dir": "drizzle/migrations",
 			"remote": false
 		}

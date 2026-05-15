@@ -37,15 +37,15 @@ function ensureStyles() {
       gap: 8px;
       align-items: center;
       padding: 6px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--theme-border);
       border-radius: 10px;
-      background: #f9fafb;
+      background: var(--theme-surface);
     }
 
     .tiptap-toolbar button {
-      border: 1px solid #d1d5db;
-      background: #fff;
-      color: #111827;
+      border: 1px solid var(--theme-border);
+      background: #fffdf8;
+      color: var(--theme-primary);
       border-radius: 8px;
       padding: 6px 10px;
       font-size: 12px;
@@ -58,25 +58,25 @@ function ensureStyles() {
     }
 
     .tiptap-toolbar button:hover {
-      background: #f9fafb;
-      border-color: #9ca3af;
+      background: var(--theme-surface);
+      border-color: var(--theme-primary);
     }
 
     .tiptap-toolbar button.is-active {
-      background: #111827;
+      background: var(--theme-primary);
       color: #fff;
-      border-color: #111827;
+      border-color: var(--theme-primary);
     }
 
     .tiptap-toolbar button.tiptap-toolbar-button-accent {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      color: #1d4ed8;
+      background: var(--theme-accent-soft);
+      border-color: #f6aa9f;
+      color: var(--theme-accent);
     }
 
     .tiptap-toolbar button.tiptap-toolbar-button-accent:hover {
-      background: #dbeafe;
-      border-color: #93c5fd;
+      background: #ffd0c8;
+      border-color: var(--theme-accent);
     }
 
     .tiptap-toolbar button:disabled {
@@ -86,9 +86,9 @@ function ensureStyles() {
 
     .tiptap-editor-shell [data-rich-text-editor] {
       min-height: 240px;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--theme-border);
       border-radius: 8px;
-      background: #fff;
+      background: #fffdf8;
       padding: 12px;
     }
 
@@ -113,7 +113,7 @@ function ensureStyles() {
 
     .tiptap-editor-shell .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
-      color: #9ca3af;
+      color: var(--theme-text-muted);
       float: left;
       height: 0;
       pointer-events: none;
@@ -126,15 +126,15 @@ function ensureStyles() {
     }
 
     .tiptap-editor-shell .ProseMirror blockquote {
-      border-left: 3px solid #d1d5db;
+      border-left: 3px solid var(--theme-border);
       margin: 1rem 0;
       padding-left: 1rem;
-      color: #4b5563;
+      color: var(--theme-text-muted);
     }
 
     .tiptap-editor-shell .ProseMirror pre {
-      background: #111827;
-      color: #f9fafb;
+      background: var(--theme-primary);
+      color: #fcf5e2;
       border-radius: 6px;
       padding: 12px;
       overflow-x: auto;
@@ -155,7 +155,7 @@ function ensureStyles() {
 
     .tiptap-image-dialog-panel {
       padding: 20px;
-      background: #fff;
+      background: #fffdf8;
       border-radius: 10px;
     }
 
@@ -163,12 +163,12 @@ function ensureStyles() {
       margin: 0;
       font-size: 18px;
       font-weight: 700;
-      color: #111827;
+      color: var(--theme-primary);
     }
 
     .tiptap-image-dialog-header p {
       margin: 6px 0 0;
-      color: #6b7280;
+      color: var(--theme-text-muted);
       font-size: 13px;
     }
 
@@ -181,25 +181,25 @@ function ensureStyles() {
     .tiptap-image-dialog-body label {
       display: grid;
       gap: 6px;
-      color: #374151;
+      color: var(--theme-primary);
       font-size: 13px;
       font-weight: 600;
     }
 
     .tiptap-image-dialog-body input {
       width: 100%;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--theme-border);
       border-radius: 10px;
       padding: 10px 12px;
       font-size: 14px;
-      color: #111827;
-      background: #fff;
+      color: var(--theme-primary);
+      background: #fffdf8;
     }
 
     .tiptap-image-dialog-body input:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      border-color: var(--theme-accent);
+      box-shadow: 0 0 0 3px rgba(241, 12, 0, 0.12);
     }
 
     .tiptap-image-dialog-footer {
@@ -214,19 +214,19 @@ function ensureStyles() {
       padding: 9px 14px;
       font-size: 13px;
       font-weight: 600;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--theme-border);
       cursor: pointer;
     }
 
     .tiptap-image-dialog-cancel {
-      background: #fff;
-      color: #374151;
+      background: #fffdf8;
+      color: var(--theme-primary);
     }
 
     .tiptap-image-dialog-submit {
-      background: #2563eb;
+      background: var(--theme-accent);
       color: #fff;
-      border-color: #2563eb;
+      border-color: var(--theme-accent);
     }
   `;
 

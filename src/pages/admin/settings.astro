@@ -1,0 +1,140 @@
+---
+import '../../styles/global.css';
+import AdminHeader from '../../components/AdminHeader.astro';
+import { users } from '../../db/schema';
+import { getDb } from '../../lib/db';
+import { t } from '../../i18n/utils';
+import type { Locale } from '../../i18n/config';
+import { eq } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
+
+const lang: Locale = 'zh';
+const db = getDb(env.DB);
+const message = Astro.url.searchParams.get('msg');
+const error = Astro.url.searchParams.get('error');
+const userId = Astro.locals.userId;
+
+if (!userId) {
+  return Astro.redirect('/admin/login');
+}
+
+const currentUser = await db.select().from(users).where(eq(users.id, userId)).get();
+if (!currentUser) {
+  return Astro.redirect('/admin/login');
+}
+
+const errorMessageMap: Record<string, string> = {
+  missing: '请完整填写密码信息。',
+  too_short: '新密码至少需要 8 位。',
+  mismatch: '两次输入的新密码不一致。',
+  invalid_current: '当前密码不正确。',
+};
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{t(lang, 'admin.userSettings')}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <AdminHeader
+      title={t(lang, 'admin.userSettings')}
+      subtitle={`当前用户：${currentUser.username}`}
+      navItems={[
+        { href: '/admin/', label: t(lang, 'admin.dashboard') },
+        { href: '/admin/activities/', label: '活动管理' },
+        { href: '/admin/settings', label: t(lang, 'admin.userSettings'), current: true },
+      ]}
+    >
+      <Fragment slot="actions">
+        <form method="POST" action="/api/auth/logout" class="inline">
+          <button
+            type="submit"
+            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {t(lang, 'admin.logout')}
+          </button>
+        </form>
+      </Fragment>
+    </AdminHeader>
+
+    <main class="container mx-auto px-4 py-6 max-w-2xl">
+      {message === 'password_updated' && (
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
+          {t(lang, 'admin.passwordUpdated')}
+        </div>
+      )}
+
+      {error && (
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+          {errorMessageMap[error] || '更新密码失败，请重试。'}
+        </div>
+      )}
+
+      <section class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="mb-6">
+          <h2 class="text-lg font-semibold text-gray-900">{t(lang, 'admin.userSettings')}</h2>
+          <p class="mt-2 text-sm text-gray-600">{t(lang, 'admin.passwordRequirements')}</p>
+        </div>
+
+        <form method="POST" action="/api/auth/password" class="space-y-4">
+          <div>
+            <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">
+              {t(lang, 'admin.currentPassword')}
+            </label>
+            <input
+              id="currentPassword"
+              name="currentPassword"
+              type="password"
+              required
+              autocomplete="current-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+            />
+          </div>
+
+          <div>
+            <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">
+              {t(lang, 'admin.newPassword')}
+            </label>
+            <input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+            />
+          </div>
+
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">
+              {t(lang, 'admin.confirmPassword')}
+            </label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+            />
+          </div>
+
+          <div class="pt-2">
+            <button
+              type="submit"
+              class="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+            >
+              {t(lang, 'admin.updatePassword')}
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

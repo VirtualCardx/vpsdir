@@ -49,7 +49,12 @@ const alternates = locales.map((l) => ({
   href: `${siteUrl}${getProviderAlternateUrl(l, provider.slug_zh, provider.slug_en)}`,
 }));
 
-const tags = provider.tags ? JSON.parse(provider.tags) : [];
+// Parse tags JSON (supports both old flat array and new bilingual format)
+const rawTags = provider.tags ? JSON.parse(provider.tags) : [];
+const tags = rawTags.map(tag => {
+  if (typeof tag === 'string') return tag;
+  return tag[lang] || tag.zh || tag.en || '';
+});
 
 const jsonLd = {
   '@context': 'https://schema.org',

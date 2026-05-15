@@ -145,6 +145,26 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
     let currentSearch = '';
     let currentTagFilter = '';
 
+    // Helper: parse tags JSON, supports old flat array and new bilingual format
+    function parseTags(raw) {
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return parsed.map(tag => {
+        if (typeof tag === 'string') return tag;
+        return tag[lang] || tag.zh || tag.en || '';
+      });
+    }
+
+    // Helper: get all tag texts for search matching (both languages)
+    function allTagTexts(raw) {
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return parsed.flatMap(tag => {
+        if (typeof tag === 'string') return [tag];
+        return [tag.zh, tag.en].filter(Boolean);
+      });
+    }
+
     // Search button click
     searchButton.addEventListener('click', function(e) {
       e.preventDefault();
@@ -187,13 +207,14 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
         const content = provider.providers_content;
         const name = content?.name?.toLowerCase() || '';
         const desc = content?.desc?.toLowerCase() || '';
-        const tags = provider.providers.tags ? JSON.parse(provider.providers.tags) : [];
+        const tagsForSearch = allTagTexts(provider.providers.tags);
+        const tagsForDisplay = parseTags(provider.providers.tags);
 
         const matchesSearch = name.includes(currentSearch) ||
                             desc.includes(currentSearch) ||
-                            tags.some(tag => tag.toLowerCase().includes(currentSearch));
+                            tagsForSearch.some(tag => tag.toLowerCase().includes(currentSearch));
 
-        const matchesTag = !currentTagFilter || tags.includes(currentTagFilter);
+        const matchesTag = !currentTagFilter || tagsForDisplay.includes(currentTagFilter);
 
         return matchesSearch && matchesTag;
       });
@@ -221,7 +242,7 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             ${items.map(row => {
               const content = row.providers_content || { name: row.providers.slug_en, desc: null };
-              const tags = row.providers.tags ? JSON.parse(row.providers.tags) : [];
+              const tags = parseTags(row.providers.tags);
               const logoUrl = row.providers.logo_key ? `/api/logo/${row.providers.logo_key}` : 'https://via.placeholder.com/48';
               const slug = lang === 'zh' ? row.providers.slug_zh : row.providers.slug_en;
 
@@ -254,10 +275,10 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
       `).join('');
     }
 
-    // Extract and display all unique tags
+    // Extract and display all unique tags (in current language)
     const allTags = new Set();
     allProviders.forEach(provider => {
-      const tags = provider.providers.tags ? JSON.parse(provider.providers.tags) : [];
+      const tags = parseTags(provider.providers.tags);
       tags.forEach(tag => allTags.add(tag));
     });
 

@@ -7,9 +7,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/prebuild.mjs",
     "clean": "node scripts/clean.mjs",
-    "build": "node scripts/clean.mjs && node scripts/prebuild.mjs && astro build",
+    "build": "node scripts/clean.mjs && astro build",
     "preview": "astro preview",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply vpsdir-db --local",

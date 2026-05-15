@@ -42,6 +42,7 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
       navItems={[
         { href: '/admin/', label: t(lang, 'admin.dashboard'), current: true },
         { href: '/admin/activities/', label: '活动管理' },
+        { href: '/admin/settings', label: t(lang, 'admin.userSettings') },
       ]}
     >
       <Fragment slot="actions">
@@ -120,9 +121,14 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
                 <div id="tags-container-add" class="flex flex-wrap gap-2 mb-2">
                   <!-- Tags will appear here -->
                 </div>
-                <div class="flex gap-2">
-                  <input type="text" id="new-tag-add" class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm" placeholder="输入标签名" />
-                  <button type="button" id="add-tag-add" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">添加</button>
+                <div class="flex gap-2 items-end">
+                  <div class="flex-1">
+                    <input type="text" id="new-tag-zh-add" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="中文标签" />
+                  </div>
+                  <div class="flex-1">
+                    <input type="text" id="new-tag-en-add" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="English tag" />
+                  </div>
+                  <button type="button" id="add-tag-add" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 whitespace-nowrap">添加</button>
                 </div>
               </div>
             </div>
@@ -256,16 +262,17 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
       // Tag management
       const tagsInput = document.getElementById('tags-input-add');
       const tagsContainer = document.getElementById('tags-container-add');
-      const newTagInput = document.getElementById('new-tag-add');
+      const newTagZhInput = document.getElementById('new-tag-zh-add');
+      const newTagEnInput = document.getElementById('new-tag-en-add');
       const addTagButton = document.getElementById('add-tag-add');
 
       let tags = [];
 
       function renderTags() {
-        tagsContainer.innerHTML = tags.map(tag => `
+        tagsContainer.innerHTML = tags.map((tag, i) => `
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-            ${tag}
-            <button type="button" class="hover:text-blue-900" data-tag="${tag}">&times;</button>
+            ${tag.zh}${tag.en ? ' / ' + tag.en : ''}
+            <button type="button" class="hover:text-blue-900" data-tag-idx="${i}">&times;</button>
           </span>
         `).join('');
 
@@ -273,15 +280,24 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
       }
 
       addTagButton.addEventListener('click', function() {
-        const tag = newTagInput.value.trim();
-        if (tag && !tags.includes(tag)) {
-          tags.push(tag);
-          newTagInput.value = '';
+        const zh = newTagZhInput.value.trim();
+        const en = newTagEnInput.value.trim();
+        if (zh || en) {
+          tags.push({ zh: zh || en, en: en || zh });
+          newTagZhInput.value = '';
+          newTagEnInput.value = '';
           renderTags();
         }
       });
 
-      newTagInput.addEventListener('keypress', function(e) {
+      newTagZhInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addTagButton.click();
+        }
+      });
+
+      newTagEnInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
           addTagButton.click();
@@ -289,10 +305,10 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
       });
 
       tagsContainer.addEventListener('click', function(e) {
-        const button = e.target.closest('[data-tag]');
+        const button = e.target.closest('[data-tag-idx]');
         if (button) {
-          const tag = button.dataset.tag;
-          tags = tags.filter(t => t !== tag);
+          const idx = parseInt(button.dataset.tagIdx);
+          tags.splice(idx, 1);
           renderTags();
         }
       });

@@ -24,21 +24,21 @@ const {
 const hasActions = Astro.slots.has('actions');
 ---
 
-<header class="bg-white border-b border-gray-200">
+<header class="admin-nav-shell border-b">
   <div class="container mx-auto px-4 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div class="min-w-0">
       <div class="flex flex-wrap items-center gap-3">
         {backHref && (
           <a
             href={backHref}
-            class="inline-flex items-center rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:border-gray-300 hover:text-gray-900 transition-colors"
+            class="nav-action nav-outline inline-flex items-center rounded-md border px-3 py-1.5 text-sm transition-colors"
           >
             &larr; {backLabel}
           </a>
         )}
         <div class="min-w-0">
-          <h1 class="text-lg font-bold text-gray-900">{title}</h1>
-          {subtitle && <p class="mt-1 text-sm text-gray-500">{subtitle}</p>}
+          <h1 class="text-lg font-bold">{title}</h1>
+          {subtitle && <p class="nav-subtitle mt-1 text-sm">{subtitle}</p>}
         </div>
       </div>
 
@@ -48,10 +48,8 @@ const hasActions = Astro.slots.has('actions');
             <a
               href={item.href}
               class:list={[
-                'inline-flex items-center rounded-full px-3 py-1.5 text-sm transition-colors',
-                item.current
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900',
+                'nav-pill inline-flex items-center rounded-full px-3 py-1.5 text-sm transition-colors',
+                item.current && 'is-current',
               ]}
               aria-current={item.current ? 'page' : undefined}
             >
