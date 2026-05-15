@@ -1,6 +1,8 @@
 ---
 import '../../../styles/global.css';
 import AdminHeader from '../../../components/AdminHeader.astro';
+import AdminHeaderActions from '../../../components/AdminHeaderActions.astro';
+import AdminFormPage from '../../../components/AdminFormPage.astro';
 import { t } from '../../../i18n/utils';
 import type { Locale } from '../../../i18n/config';
 import { getDb } from '../../../lib/db';
@@ -53,54 +55,50 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
       ]}
     >
       <Fragment slot="actions">
-        <form method="POST" action="/api/auth/logout" class="inline">
-          <button
-            type="submit"
-            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            {t(lang, 'admin.logout')}
-          </button>
-        </form>
+        <AdminHeaderActions logoutLabel={t(lang, 'admin.logout')} />
       </Fragment>
     </AdminHeader>
 
-    <main class="container mx-auto px-4 py-6 max-w-3xl">
-      <form method="POST" action={`/api/admin/providers?id=${id}&_method=PUT`} enctype="multipart/form-data" class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <AdminFormPage
+      action={`/api/admin/providers?id=${id}&_method=PUT`}
+      enctype="multipart/form-data"
+      formClass="space-y-4"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.slug')} (中文)</label>
-            <input type="text" name="slug_zh" required value={provider.slug_zh} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.slug')} (中文)</label>
+            <input type="text" name="slug_zh" required value={provider.slug_zh} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.slug')} (EN)</label>
-            <input type="text" name="slug_en" required value={provider.slug_en} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.slug')} (EN)</label>
+            <input type="text" name="slug_en" required value={provider.slug_en} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.name')} (中文)</label>
-            <input type="text" name="name_zh" required value={contentZh?.name || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.name')} (中文)</label>
+            <input type="text" name="name_zh" required value={contentZh?.name || ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.name')} (EN)</label>
-            <input type="text" name="name_en" required value={contentEn?.name || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.name')} (EN)</label>
+            <input type="text" name="name_en" required value={contentEn?.name || ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.url')}</label>
-            <input type="url" name="url" required value={provider.url} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.url')}</label>
+            <input type="url" name="url" required value={provider.url} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'provider.category')}</label>
-            <select name="category" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+            <label class="admin-label">{t(lang, 'provider.category')}</label>
+            <select name="category" required class="admin-input">
               {categories.map((cat) => (
                 <option value={cat} selected={cat === provider.category}>{t(lang, `categories.${cat}`)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'provider.rating')}</label>
-            <input type="number" name="rating" min="0" max="5" step="0.1" value={provider.rating ?? ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'provider.rating')}</label>
+            <input type="number" name="rating" min="0" max="5" step="0.1" value={provider.rating ?? ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">自定义标签</label>
+            <label class="admin-label">自定义标签</label>
             <div class="border border-gray-300 rounded p-3 bg-gray-50">
               <input type="hidden" name="tags" id="tags-input-edit" value={provider.tags || '[]'} />
               <div id="tags-container-edit" class="flex flex-wrap gap-2 mb-2">
@@ -108,56 +106,59 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
               </div>
               <div class="flex gap-2 items-end">
                 <div class="flex-1">
-                  <input type="text" id="new-tag-zh-edit" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="中文标签" />
+                  <input type="text" id="new-tag-zh-edit" class="admin-input" placeholder="中文标签" />
                 </div>
                 <div class="flex-1">
-                  <input type="text" id="new-tag-en-edit" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="English tag" />
+                  <input type="text" id="new-tag-en-edit" class="admin-input" placeholder="English tag" />
                 </div>
-                <button type="button" id="add-tag-edit" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 whitespace-nowrap">添加</button>
+                <button type="button" id="add-tag-edit" class="admin-btn admin-btn-accent whitespace-nowrap">添加</button>
               </div>
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.logo')}</label>
-            <div class="grid grid-cols-2 gap-4">
+            <label class="admin-label">{t(lang, 'admin.logo')}</label>
+            <div class="space-y-3">
               {provider.logo_key && (
-                <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                  <p class="text-xs font-medium text-gray-600 mb-2">当前Logo</p>
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p class="admin-label mb-2">当前Logo</p>
                   <div class="flex items-center justify-center h-24 bg-white rounded border border-gray-200">
-                    <img src={`/api/logo/${provider.logo_key}`} alt="当前Logo" class="max-h-full max-w-full object-contain" />
+                    <img
+                      src={`/api/logo/${provider.logo_key}`}
+                      alt="当前Logo"
+                      class="h-20 w-auto object-contain rounded"
+                    />
                   </div>
                 </div>
               )}
-              <div class={provider.logo_key ? '' : 'col-span-2'}>
-                <div id="logo-upload-area-edit" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer bg-gray-50">
-                  <input type="file" name="logo" accept="image/*" class="hidden" id="logo-input-edit" />
-                  <div id="upload-placeholder-edit">
-                    <svg class="mx-auto h-10 w-10 text-gray-400 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <p class="text-sm text-gray-600">{provider.logo_key ? '点击更换新Logo' : '点击或拖拽上传Logo'}</p>
-                    <p class="text-xs text-gray-400 mt-1">支持 PNG, JPG, GIF, SVG 格式</p>
-                  </div>
-                  <div id="logo-preview-edit" class="hidden">
-                    <div class="flex items-center justify-center h-24 bg-white rounded border border-blue-200 mb-2">
-                      <img id="logo-image-edit" src="" alt="新Logo预览" class="max-h-full max-w-full object-contain" />
-                    </div>
-                    <p class="text-xs text-blue-600 font-medium">新Logo预览</p>
-                    <button type="button" id="remove-logo-edit" class="mt-2 text-xs text-red-600 hover:text-red-700">取消新Logo</button>
-                  </div>
+              <div
+                id="logo-upload-area-edit"
+                class="admin-upload-area"
+              >
+                <input type="file" name="logo" accept="image/*" class="hidden" id="logo-input-edit" />
+                <div id="upload-placeholder-edit">
+                  <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <p class="admin-upload-text">{provider.logo_key ? '点击或拖拽图片到此处更换' : '点击或拖拽图片到此处上传'}</p>
+                  <p class="admin-upload-subtext">支持 PNG, JPG, GIF, SVG 格式</p>
+                </div>
+                <div id="logo-preview-edit" class="hidden">
+                  <img id="logo-image-edit" src="" alt="新Logo预览" class="h-20 w-auto object-contain mx-auto rounded" />
+                  <p class="admin-help-text mt-2">点击更换图片</p>
+                  <button type="button" id="remove-logo-edit" class="mt-2 admin-btn-danger">取消新Logo</button>
                 </div>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" name="is_active" id="is_active" checked={provider.is_active} class="rounded" />
-            <label for="is_active" class="text-sm font-medium text-gray-700">{t(lang, 'admin.active')}</label>
+          <div class="admin-checkbox-row">
+            <input type="checkbox" name="is_active" id="is_active" checked={provider.is_active} class="admin-checkbox" />
+            <label for="is_active" class="admin-checkbox-label">{t(lang, 'admin.active')}</label>
           </div>
-        </div>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (中文)</label>
+            <label class="admin-label">{t(lang, 'admin.desc')} (中文)</label>
             <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="请输入服务商中文描述，支持标题、列表、引用、代码块和图片">
               <input type="hidden" name="desc_zh" data-rich-text-input value={contentZh?.desc || ''} />
               <div class="tiptap-toolbar" data-rich-text-toolbar></div>
@@ -165,42 +166,46 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.desc')} (EN)</label>
+            <label class="admin-label">{t(lang, 'admin.desc')} (EN)</label>
             <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="Enter the provider description in English with headings, lists, quotes, code blocks, and images">
               <input type="hidden" name="desc_en" data-rich-text-input value={contentEn?.desc || ''} />
               <div class="tiptap-toolbar" data-rich-text-toolbar></div>
               <div data-rich-text-editor></div>
             </div>
           </div>
-        </div>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaTitle')} (中文)</label>
-            <input type="text" name="meta_title_zh" value={contentZh?.meta_title || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.metaTitle')} (中文)</label>
+            <input type="text" name="meta_title_zh" value={contentZh?.meta_title || ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaTitle')} (EN)</label>
-            <input type="text" name="meta_title_en" value={contentEn?.meta_title || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.metaTitle')} (EN)</label>
+            <input type="text" name="meta_title_en" value={contentEn?.meta_title || ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaDesc')} (中文)</label>
-            <input type="text" name="meta_desc_zh" value={contentZh?.meta_desc || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.metaDesc')} (中文)</label>
+            <input type="text" name="meta_desc_zh" value={contentZh?.meta_desc || ''} class="admin-input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{t(lang, 'admin.metaDesc')} (EN)</label>
-            <input type="text" name="meta_desc_en" value={contentEn?.meta_desc || ''} class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+            <label class="admin-label">{t(lang, 'admin.metaDesc')} (EN)</label>
+            <input type="text" name="meta_desc_en" value={contentEn?.meta_desc || ''} class="admin-input" />
           </div>
-        </div>
+      </div>
 
-        <div class="flex items-center gap-3 pt-2">
-          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
-            {t(lang, 'admin.save')}
-          </button>
-          <a href="/admin/" class="text-sm text-gray-500 hover:text-gray-700">{t(lang, 'admin.cancel')}</a>
-        </div>
-      </form>
-    </main>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="submit" class="admin-btn admin-btn-primary">
+          {t(lang, 'admin.save')}
+        </button>
+        <a
+          href="/admin/"
+          class="admin-btn admin-btn-secondary"
+        >
+          {t(lang, 'admin.cancel')}
+        </a>
+      </div>
+    </AdminFormPage>
 
     <script>
       import { initAdminRichTextEditors } from '../../../scripts/admin-rich-text';
@@ -224,9 +229,9 @@ const categories = ['vps', 'domain', 'email', 'hosting', 'cdn'];
 
       function renderTags() {
         tagsContainer.innerHTML = tags.map((tag, i) => `
-          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+          <span class="admin-tag-pill">
             ${tag.zh}${tag.en ? ' / ' + tag.en : ''}
-            <button type="button" class="hover:text-blue-900" data-tag-idx="${i}">&times;</button>
+            <button type="button" class="admin-tag-pill-remove" data-tag-idx="${i}">&times;</button>
           </span>
         `).join('');
 

@@ -230,6 +230,28 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 - **活动管理**: 新增、编辑、删除活动，并管理活动分类
 - **用户设置**: 修改当前已登录管理员用户的密码
 
+## 后台样式约定
+
+- 后台页面已经在 `src/styles/global.css` 中沉淀了一组通用样式类，并在 `src/components/` 中抽出了一批共享 Astro 组件。新增或调整后台页面时，优先复用这些类和组件，而不是继续堆叠零散的 Tailwind 工具类或重复写页面骨架。
+
+单独速查文档：[`docs/admin-ui-cheat-sheet.zh-CN.md`](docs/admin-ui-cheat-sheet.zh-CN.md)
+
+- **卡片与区块**: 使用 `admin-card`、`admin-section-header`、`admin-section-title`、`admin-section-desc`
+- **提示与空状态**: 使用 `admin-alert-*`、`admin-help-text`、`admin-empty-state`、`admin-empty-state-table`
+- **表单控件**: 使用 `admin-label`、`admin-input`、`admin-checkbox-row`、`admin-checkbox`、`admin-checkbox-label`
+- **按钮与链接**: 使用 `admin-btn-*`、`admin-action-link`、`admin-btn-danger`
+- **表格与状态**: 使用 `admin-table-card`、`admin-table-wrap`、`admin-table-head`、`admin-cell*`、`admin-badge*`
+- **上传与标签**: 使用 `admin-upload-*`、`admin-tag-pill`、`admin-tag-pill-remove`
+- **共享组件**: 优先复用 `AdminAlert`、`AdminSectionCard`、`AdminDataTable`、`AdminHeaderActions`、`AdminFormPage`
+
+推荐做法：
+
+- 后台新增页面时，先从现有后台页复制结构，再替换字段和业务逻辑
+- 优先在 `global.css` 扩展通用类，再回到页面里复用，避免每个页面重新写一套样式
+- 如果只是颜色、圆角、间距微调，优先改通用类，不要逐页手改
+- 新增后台组件后，顺手检查是否还能被服务商管理页、活动管理页、登录页、用户设置页复用
+- 独立后台表单页优先用 `AdminFormPage` 统一 `main + card + form` 外层；如果页面下方还有列表或其它区块，可使用 `wrapMain={false}` 嵌入当前页面
+
 ### API
 
 | 端点                                          | 方法   | 说明             |

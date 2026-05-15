@@ -1,6 +1,11 @@
 ---
 import '../../../styles/global.css';
 import AdminHeader from '../../../components/AdminHeader.astro';
+import AdminAlert from '../../../components/AdminAlert.astro';
+import AdminHeaderActions from '../../../components/AdminHeaderActions.astro';
+import AdminFormPage from '../../../components/AdminFormPage.astro';
+import AdminSectionCard from '../../../components/AdminSectionCard.astro';
+import AdminDataTable from '../../../components/AdminDataTable.astro';
 import { t } from '../../../i18n/utils';
 import type { Locale } from '../../../i18n/config';
 import { getDb } from '../../../lib/db';
@@ -104,149 +109,145 @@ const message = Astro.url.searchParams.get('msg');
       ]}
     >
       <Fragment slot="actions">
-        <form method="POST" action="/api/auth/logout" class="inline">
-          <button
-            type="submit"
-            class="text-sm px-3 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            {t(lang, 'admin.logout')}
-          </button>
-        </form>
+        <AdminHeaderActions logoutLabel={t(lang, 'admin.logout')} />
       </Fragment>
     </AdminHeader>
 
     <main class="container mx-auto px-4 py-6">
       {message && (
-        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
+        <AdminAlert>
           {message === 'created' ? '创建成功' : message === 'updated' ? '更新成功' : message === 'deleted' ? '删除成功' : message === 'category_created' ? '分类添加成功' : message === 'category_deleted' ? '分类删除成功' : message}
-        </div>
+        </AdminAlert>
       )}
 
       <!-- Add Activity Form -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">发布新活动</h2>
-        <form id="activityForm" method="POST" action="/api/admin/activities" enctype="multipart/form-data" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <AdminFormPage
+        title="发布新活动"
+        class="mb-6"
+        id="activityForm"
+        action="/api/admin/activities"
+        enctype="multipart/form-data"
+        formClass="space-y-4"
+        wrapMain={false}
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">标识符 (Slug)</label>
-              <input type="text" name="slug" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="activity-slug" />
+              <label class="admin-label">标识符 (Slug)</label>
+              <input type="text" name="slug" required class="admin-input" placeholder="activity-slug" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
-              <select name="category_id" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+              <label class="admin-label">分类</label>
+              <select name="category_id" required class="admin-input">
                 <option value="">请选择分类</option>
                 {categories.map((cat) => (
                   <option value={cat.id}>{cat.slug}</option>
                 ))}
               </select>
               {categories.length === 0 && (
-                <p class="mt-1 text-xs text-red-600">暂无分类，请先创建活动分类</p>
+                <p class="admin-note-danger">暂无分类，请先创建活动分类</p>
               )}
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">发布时间</label>
-              <input type="datetime-local" name="published_at" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+              <label class="admin-label">发布时间</label>
+              <input type="datetime-local" name="published_at" class="admin-input" />
             </div>
             <div class="flex items-end gap-4">
-              <label class="flex items-center gap-2">
-                <input type="checkbox" name="is_featured" value="1" class="rounded" />
-                <span class="text-sm font-medium text-gray-700">推荐活动</span>
+              <label class="admin-checkbox-row">
+                <input type="checkbox" name="is_featured" value="1" class="admin-checkbox" />
+                <span class="admin-checkbox-label">推荐活动</span>
               </label>
-              <label class="flex items-center gap-2">
-                <input type="checkbox" name="is_active" value="1" checked class="rounded" />
-                <span class="text-sm font-medium text-gray-700">立即发布</span>
+              <label class="admin-checkbox-row">
+                <input type="checkbox" name="is_active" value="1" checked class="admin-checkbox" />
+                <span class="admin-checkbox-label">立即发布</span>
               </label>
             </div>
-          </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">标题 (中文)</label>
-              <input type="text" name="title_zh" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+              <label class="admin-label">标题 (中文)</label>
+              <input type="text" name="title_zh" required class="admin-input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">标题 (EN)</label>
-              <input type="text" name="title_en" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+              <label class="admin-label">标题 (EN)</label>
+              <input type="text" name="title_en" required class="admin-input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (中文)</label>
-              <input type="text" name="slug_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+              <label class="admin-label">URL 标识 (中文)</label>
+              <input type="text" name="slug_zh" class="admin-input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">URL 标识 (EN)</label>
-              <input type="text" name="slug_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+              <label class="admin-label">URL 标识 (EN)</label>
+              <input type="text" name="slug_en" class="admin-input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (中文)</label>
-              <input type="text" name="description_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="用于列表展示和SEO描述" />
+              <label class="admin-label">简短描述 (中文)</label>
+              <input type="text" name="description_zh" class="admin-input" placeholder="用于列表展示和SEO描述" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">简短描述 (EN)</label>
-              <input type="text" name="description_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Short description for lists and SEO" />
+              <label class="admin-label">简短描述 (EN)</label>
+              <input type="text" name="description_en" class="admin-input" placeholder="Short description for lists and SEO" />
             </div>
-          </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">内容 (中文)</label>
+              <label class="admin-label">内容 (中文)</label>
               <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="请输入活动详细内容，支持标题、列表、引用、图片等格式">
                 <input type="hidden" name="content_zh" data-rich-text-input value="" />
                 <div class="tiptap-toolbar" data-rich-text-toolbar></div>
                 <div data-rich-text-editor></div>
               </div>
-              <p class="mt-1 text-xs text-gray-500">支持标题、加粗、列表、引用、代码块、图片等格式。</p>
+              <p class="admin-help-text">支持标题、加粗、列表、引用、代码块、图片等格式。</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Content (EN)</label>
+              <label class="admin-label">Content (EN)</label>
               <div class="tiptap-editor-shell" data-rich-text-root data-placeholder="Enter detailed activity content with headings, lists, quotes, images, and more">
                 <input type="hidden" name="content_en" data-rich-text-input value="" />
                 <div class="tiptap-toolbar" data-rich-text-toolbar></div>
                 <div data-rich-text-editor></div>
               </div>
-              <p class="mt-1 text-xs text-gray-500">Supports headings, emphasis, lists, quotes, code blocks, images, and more.</p>
+              <p class="admin-help-text">Supports headings, emphasis, lists, quotes, code blocks, images, and more.</p>
             </div>
-          </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SEO 标题 (中文)</label>
-              <input type="text" name="meta_title_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用活动标题" />
+              <label class="admin-label">SEO 标题 (中文)</label>
+              <input type="text" name="meta_title_zh" class="admin-input" placeholder="留空使用活动标题" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SEO Title (EN)</label>
-              <input type="text" name="meta_title_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use activity title" />
+              <label class="admin-label">SEO Title (EN)</label>
+              <input type="text" name="meta_title_en" class="admin-input" placeholder="Leave empty to use activity title" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SEO 描述 (中文)</label>
-              <input type="text" name="meta_desc_zh" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="留空使用简短描述" />
+              <label class="admin-label">SEO 描述 (中文)</label>
+              <input type="text" name="meta_desc_zh" class="admin-input" placeholder="留空使用简短描述" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SEO Description (EN)</label>
-              <input type="text" name="meta_desc_en" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="Leave empty to use short description" />
+              <label class="admin-label">SEO Description (EN)</label>
+              <input type="text" name="meta_desc_en" class="admin-input" placeholder="Leave empty to use short description" />
             </div>
-          </div>
+        </div>
 
-          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
-            发布活动
-          </button>
-        </form>
-      </div>
+        <button type="submit" class="admin-btn admin-btn-primary">
+          发布活动
+        </button>
+      </AdminFormPage>
 
       <!-- Category Management -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">分类管理</h2>
-
+      <AdminSectionCard title="分类管理" class="mb-6">
         <!-- Add Category Form -->
         <form id="categoryForm" class="flex items-end gap-3 mb-4">
           <div class="flex-1 max-w-xs">
-            <label class="block text-sm font-medium text-gray-700 mb-1">分类标识 (Slug)</label>
-            <input type="text" id="categorySlug" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm" placeholder="e.g. news, events" />
+            <label class="admin-label">分类标识 (Slug)</label>
+            <input type="text" id="categorySlug" required class="admin-input" placeholder="e.g. news, events" />
           </div>
           <div class="w-28">
-            <label class="block text-sm font-medium text-gray-700 mb-1">排序</label>
-            <input type="number" id="categorySort" class="w-full px-3 py-2 border border-gray-300 rounded text-sm" value="0" min="0" />
+            <label class="admin-label">排序</label>
+            <input type="number" id="categorySort" class="admin-input" value="0" min="0" />
           </div>
-          <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors whitespace-nowrap">
+          <button type="submit" class="admin-btn admin-btn-primary whitespace-nowrap">
             添加分类
           </button>
         </form>
@@ -254,19 +255,19 @@ const message = Astro.url.searchParams.get('msg');
         <!-- Category List -->
         <div id="categoryList">
           {categories.length === 0 ? (
-            <p class="text-gray-400 text-sm py-2">暂无分类</p>
+            <p class="admin-empty-state">暂无分类</p>
           ) : (
             <div class="divide-y divide-gray-100">
               {categories.map((cat) => (
                 <div class="flex items-center justify-between py-2" data-category-id={cat.id}>
                   <div class="flex items-center gap-3">
                     <span class="text-xs text-gray-400">#{cat.id}</span>
-                    <span class="text-sm font-medium">{cat.slug}</span>
-                    <span class="text-xs text-gray-400">排序: {cat.sort_order}</span>
+                    <span class="admin-text-strong">{cat.slug}</span>
+                    <span class="admin-upload-subtext">排序: {cat.sort_order}</span>
                   </div>
                   <button
                     type="button"
-                    class="category-delete-btn text-red-600 hover:underline text-xs"
+                    class="category-delete-btn admin-btn-danger"
                     data-id={cat.id}
                     data-slug={cat.slug}
                   >
@@ -277,74 +278,69 @@ const message = Astro.url.searchParams.get('msg');
             </div>
           )}
         </div>
-      </div>
+      </AdminSectionCard>
 
       <!-- Activity List -->
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">ID</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">标题</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">分类</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">发布时间</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">状态</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">浏览</th>
-                <th class="px-4 py-3 text-left font-medium text-gray-600">操作</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              {allActivities.length === 0 ? (
-                <tr>
-                  <td colspan="7" class="px-4 py-8 text-center text-gray-400">
-                    暂无活动
-                  </td>
-                </tr>
-              ) : (
-                allActivities.map((activity) => (
-                  <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 text-gray-500">{activity.id}</td>
-                    <td class="px-4 py-3 font-medium">
-                      {activity.titleZh || activity.slug}
-                      {activity.isFeatured && <span class="ml-2 text-yellow-600">⭐</span>}
-                    </td>
-                    <td class="px-4 py-3">
-                      <span class="text-xs">
-                        {activity.categorySlug}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500">
-                      {new Date(activity.publishedAt).toLocaleDateString('zh-CN')}
-                    </td>
-                    <td class="px-4 py-3">
-                      <span class:list={[
-                        'text-xs px-2 py-0.5 rounded',
-                        activity.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
-                      ]}>
-                        {activity.isActive ? '已发布' : '草稿'}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500">{activity.viewCount}</td>
-                    <td class="px-4 py-3">
-                      <div class="flex items-center gap-2">
-                        <a href={`/admin/activities/edit/${activity.id}`} class="text-blue-600 hover:underline text-xs">
-                          编辑
-                        </a>
-                        <form class="delete-form" method="POST" action={`/api/admin/activities?id=${activity.id}&_method=DELETE`} class="inline">
-                          <button type="submit" class="text-red-600 hover:underline text-xs">
-                            删除
-                          </button>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <AdminDataTable headClass="bg-gray-50 border-b border-gray-200" bodyClass="divide-y divide-gray-100">
+        <Fragment slot="head">
+          <tr>
+            <th class="admin-table-head">ID</th>
+            <th class="admin-table-head">标题</th>
+            <th class="admin-table-head">分类</th>
+            <th class="admin-table-head">发布时间</th>
+            <th class="admin-table-head">状态</th>
+            <th class="admin-table-head">浏览</th>
+            <th class="admin-table-head">操作</th>
+          </tr>
+        </Fragment>
+
+        {allActivities.length === 0 ? (
+          <tr>
+            <td colspan="7" class="admin-empty-state-table">
+              暂无活动
+            </td>
+          </tr>
+        ) : (
+          allActivities.map((activity) => (
+            <tr class="hover:bg-gray-50">
+              <td class="admin-cell-muted">{activity.id}</td>
+              <td class="admin-cell-strong">
+                {activity.titleZh || activity.slug}
+                {activity.isFeatured && <span class="ml-2 admin-text-accent">⭐</span>}
+              </td>
+              <td class="admin-cell">
+                <span class="text-xs">
+                  {activity.categorySlug}
+                </span>
+              </td>
+              <td class="admin-cell-muted">
+                {new Date(activity.publishedAt).toLocaleDateString('zh-CN')}
+              </td>
+              <td class="admin-cell">
+                <span class:list={[
+                  'admin-badge',
+                  activity.isActive ? 'admin-badge-success' : 'admin-badge-danger',
+                ]}>
+                  {activity.isActive ? '已发布' : '草稿'}
+                </span>
+              </td>
+              <td class="admin-cell-muted">{activity.viewCount}</td>
+              <td class="admin-cell">
+                <div class="flex items-center gap-2">
+                  <a href={`/admin/activities/edit/${activity.id}`} class="admin-action-link">
+                    编辑
+                  </a>
+                  <form class="delete-form inline" method="POST" action={`/api/admin/activities?id=${activity.id}&_method=DELETE`}>
+                    <button type="submit" class="admin-btn-danger">
+                      删除
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </AdminDataTable>
     </main>
 
     <script>

@@ -230,6 +230,28 @@ wrangler d1 execute vpsdir-db --local --command="SELECT password_hash FROM users
 - **Activity Management**: create, edit, delete activities and manage activity categories
 - **User Settings**: change the currently signed-in admin user's password
 
+## Admin Styling Guide
+
+The admin area now has a shared styling layer in `src/styles/global.css` and a growing set of shared Astro components in `src/components/`. When adding or updating admin pages, prefer these shared classes and components over piling up one-off Tailwind utility combinations or re-building the same page shell.
+
+Standalone reference: [`docs/admin-ui-cheat-sheet.md`](docs/admin-ui-cheat-sheet.md)
+
+- **Cards and sections**: `admin-card`, `admin-section-header`, `admin-section-title`, `admin-section-desc`
+- **Alerts and empty states**: `admin-alert-*`, `admin-help-text`, `admin-empty-state`, `admin-empty-state-table`
+- **Form controls**: `admin-label`, `admin-input`, `admin-checkbox-row`, `admin-checkbox`, `admin-checkbox-label`
+- **Buttons and links**: `admin-btn-*`, `admin-action-link`, `admin-btn-danger`
+- **Tables and status UI**: `admin-table-card`, `admin-table-wrap`, `admin-table-head`, `admin-cell*`, `admin-badge*`
+- **Uploads and tag pills**: `admin-upload-*`, `admin-tag-pill`, `admin-tag-pill-remove`
+- **Shared components**: `AdminAlert`, `AdminSectionCard`, `AdminDataTable`, `AdminHeaderActions`, `AdminFormPage`
+
+Recommended workflow:
+
+- Start new admin pages from an existing admin page structure, then swap fields and business logic
+- Extend shared classes in `global.css` first, then reuse them in page templates
+- If a tweak is only about color, spacing, or border radius, update the shared class instead of patching pages one by one
+- When introducing a new admin UI pattern, check whether it can also be reused by provider management, activity management, login, or settings pages
+- For standalone admin form pages, prefer `AdminFormPage` to keep the `main + card + form` shell consistent; if the page also includes tables or other sections, embed it with `wrapMain={false}`
+
 ### API
 
 | Endpoint | Method | Description |
