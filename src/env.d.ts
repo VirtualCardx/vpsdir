@@ -6,6 +6,7 @@ interface CloudflareEnv {
   VPSDIR_KV: KVNamespace;
   R2: R2Bucket;
   ADMIN_SESSION_SECRET: string;
+  API_BEARER_TOKEN: string;
 }
 
 declare module 'cloudflare:workers' {

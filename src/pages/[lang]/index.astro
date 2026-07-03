@@ -62,8 +62,20 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
           desc: richTextToPlainText(item.providers_content.desc),
         }
       : null,
-  }))
-);
+  })));
+
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: t(lang as Locale, 'site.title'),
+  description: t(lang as Locale, 'site.description'),
+  url: `${Astro.url.origin}/${lang}/`,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${Astro.url.origin}/${lang}/?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
 ---
 
 <BaseLayout
@@ -71,6 +83,7 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
   description={t(lang, 'site.description')}
   lang={lang as Locale}
   alternates={alternates}
+  jsonLd={homeJsonLd}
 >
   <h1 class="text-3xl font-bold mb-6">{t(lang, 'site.description')}</h1>
 
@@ -141,6 +154,17 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
     const clearButton = document.getElementById('clear-button');
     const searchTags = document.getElementById('search-tags');
     const providerContainer = document.getElementById('provider-container');
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     let currentSearch = '';
     let currentTagFilter = '';
@@ -238,27 +262,27 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
 
       providerContainer.innerHTML = Array.from(categories.entries()).map(([category, items]) => `
         <section class="mb-10">
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">${category}</h2>
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">${escapeHtml(category)}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             ${items.map(row => {
               const content = row.providers_content || { name: row.providers.slug_en, desc: null };
               const tags = parseTags(row.providers.tags);
-              const logoUrl = row.providers.logo_key ? `/api/logo/${row.providers.logo_key}` : 'https://via.placeholder.com/48';
+              const logoUrl = row.providers.logo_key ? `/api/logo/${escapeHtml(row.providers.logo_key)}` : 'https://via.placeholder.com/48';
               const slug = lang === 'zh' ? row.providers.slug_zh : row.providers.slug_en;
 
               return `
-                <a href="/${lang}/provider/${slug}" class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                <a href="/${lang}/provider/${escapeHtml(slug)}" class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
                   <div class="flex items-start gap-4">
-                    <img src="${logoUrl}" alt="${content.name}" class="w-12 h-12 rounded object-contain flex-shrink-0 bg-gray-50" loading="lazy" width="48" height="48" />
+                    <img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(content.name)}" class="w-12 h-12 rounded object-contain flex-shrink-0 bg-gray-50" loading="lazy" width="48" height="48" />
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-semibold text-gray-900 truncate">${content.name}</h3>
-                      <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">${category}</span>
+                      <h3 class="font-semibold text-gray-900 truncate">${escapeHtml(content.name)}</h3>
+                      <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">${escapeHtml(category)}</span>
                       ${tags.length > 0 ? `
                         <div class="flex flex-wrap gap-1 mt-2">
-                          ${tags.map(tag => `<span class="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">${tag}</span>`).join('')}
+                          ${tags.map(tag => `<span class="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">${escapeHtml(tag)}</span>`).join('')}
                         </div>
                       ` : ''}
-                      ${content.desc ? `<p class="text-sm text-gray-500 mt-2 line-clamp-2">${content.desc}</p>` : ''}
+                      ${content.desc ? `<p class="text-sm text-gray-500 mt-2 line-clamp-2">${escapeHtml(content.desc)}</p>` : ''}
                       ${row.providers.rating != null && row.providers.rating > 0 ? `
                         <div class="flex items-center gap-1 mt-2">
                           <span class="text-yellow-500 text-sm">&#9733;</span>
@@ -284,8 +308,8 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
 
     if (allTags.size > 0) {
       searchTags.innerHTML = Array.from(allTags).map(tag => `
-        <button class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors" data-tag="${tag}">
-          ${tag}
+        <button class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)}
         </button>
       `).join('');
 

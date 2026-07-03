@@ -8,6 +8,11 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response('Not found', { status: 404 });
   }
 
+  // Only allow access to logos prefix
+  if (!key.startsWith('logos/')) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   const object = await env.R2.get(key);
   if (!object) {
     return new Response('Not found', { status: 404 });

@@ -8,10 +8,32 @@ interface Props {
 
 const { title, description, alternates, jsonLd } = Astro.props;
 const canonicalUrl = Astro.url.href;
+const siteName = 'VPS Directory';
+const ogImage = `${Astro.url.origin}/favicon.svg`;
 ---
 
 <title>{title}</title>
-{description && <meta name="description" content={description} />}
+<meta name="description" content={description || ''} />
 <link rel="canonical" href={canonicalUrl} />
+<meta name="generator" content={Astro.generator} />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description || ''} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content={alternates?.[0]?.lang === 'en' ? 'en_US' : 'zh_CN'} />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description || ''} />
+<meta name="twitter:image" content={ogImage} />
+
+<!-- Hreflang -->
 {alternates?.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+<link rel="alternate" hreflang="x-default" href={`${Astro.url.origin}/zh/`} />
+
 {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}

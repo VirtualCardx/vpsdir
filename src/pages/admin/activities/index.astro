@@ -24,62 +24,43 @@ try {
   // Try to get categories first
   categories = await db.select().from(activityCategories).orderBy(activityCategories.sort_order);
 
-  // Get basic activity data
-  const activityData = await db
-    .select()
+  // Get activities with content and category via JOINs
+  const activityRows = await db
+    .select({
+      id: activities.id,
+      slug: activities.slug,
+      categoryId: activities.category_id,
+      publishedAt: activities.published_at,
+      isFeatured: activities.is_featured,
+      isActive: activities.is_active,
+      viewCount: activities.view_count,
+      createdAt: activities.created_at,
+      titleZh: activitiesContent.title,
+      categorySlug: activityCategories.slug,
+      categoryIcon: activityCategories.icon,
+    })
     .from(activities)
+    .leftJoin(
+      activitiesContent,
+      and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, 'zh')),
+    )
+    .leftJoin(activityCategories, eq(activities.category_id, activityCategories.id))
     .orderBy(desc(activities.published_at))
     .limit(50);
 
-  // Get content and category info separately
-  allActivities = await Promise.all(
-    activityData.map(async (activity) => {
-      try {
-        const zhContent = await db
-          .select()
-          .from(activitiesContent)
-          .where(and(eq(activitiesContent.activity_id, activity.id), eq(activitiesContent.lang, 'zh')))
-          .limit(1)
-          .then(rows => rows[0]);
-
-        const category = await db
-          .select()
-          .from(activityCategories)
-          .where(eq(activityCategories.id, activity.category_id))
-          .limit(1)
-          .then(rows => rows[0]);
-
-        return {
-          id: activity.id,
-          slug: activity.slug,
-          categoryId: activity.category_id,
-          publishedAt: activity.published_at,
-          isFeatured: activity.is_featured,
-          isActive: activity.is_active,
-          viewCount: activity.view_count,
-          createdAt: activity.created_at,
-          titleZh: zhContent?.title || '',
-          categorySlug: category?.slug || '',
-          categoryIcon: category?.icon || '',
-        };
-      } catch (err) {
-        console.error('Error processing activity:', activity.id, err);
-        return {
-          id: activity.id,
-          slug: activity.slug,
-          categoryId: activity.category_id,
-          publishedAt: activity.published_at,
-          isFeatured: activity.is_featured,
-          isActive: activity.is_active,
-          viewCount: activity.view_count,
-          createdAt: activity.created_at,
-          titleZh: '',
-          categorySlug: '',
-          categoryIcon: '',
-        };
-      }
-    })
-  );
+  allActivities = activityRows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    categoryId: row.categoryId,
+    publishedAt: row.publishedAt,
+    isFeatured: row.isFeatured,
+    isActive: row.isActive,
+    viewCount: row.viewCount,
+    createdAt: row.createdAt,
+    titleZh: row.titleZh || '',
+    categorySlug: row.categorySlug || '',
+    categoryIcon: row.categoryIcon || '',
+  }));
 } catch (error) {
   console.error('Database query error:', error);
   // Set empty arrays if tables don't exist yet

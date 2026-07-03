@@ -67,10 +67,20 @@ await db.update(activities)
   .set({ view_count: activityBasic.view_count + 1 })
   .where(eq(activities.id, activityBasic.id));
 
-// Get related activities
-const relatedActivitiesData = await db
-  .select()
+// Get related activities with content via JOINs
+const relatedRows = await db
+  .select({
+    slug: activities.slug,
+    title: activitiesContent.title,
+    publishedAt: activities.published_at,
+    categorySlug: activityCategories.slug,
+  })
   .from(activities)
+  .leftJoin(
+    activitiesContent,
+    and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
+  )
+  .leftJoin(activityCategories, eq(activities.category_id, activityCategories.id))
   .where(and(
     eq(activities.is_active, true),
     eq(activities.category_id, activity.categoryId),
@@ -79,30 +89,12 @@ const relatedActivitiesData = await db
   .orderBy(desc(activities.published_at))
   .limit(4);
 
-const relatedActivities = await Promise.all(
-  relatedActivitiesData.map(async (relatedActivity) => {
-    const relatedContent = await db
-      .select()
-      .from(activitiesContent)
-      .where(and(eq(activitiesContent.activity_id, relatedActivity.id), eq(activitiesContent.lang, lang)))
-      .limit(1)
-      .then(rows => rows[0]);
-
-    const relatedCategory = await db
-      .select()
-      .from(activityCategories)
-      .where(eq(activityCategories.id, relatedActivity.category_id))
-      .limit(1)
-      .then(rows => rows[0]);
-
-    return {
-      slug: relatedActivity.slug,
-      title: relatedContent?.title || '',
-      publishedAt: relatedActivity.published_at,
-      categorySlug: relatedCategory?.slug || '',
-    };
-  })
-);
+const relatedActivities = relatedRows.map((row) => ({
+  slug: row.slug,
+  title: row.title || '',
+  publishedAt: row.publishedAt,
+  categorySlug: row.categorySlug || '',
+}));
 
 const siteName = t(lang, 'site.title');
 const pageTitle = activity.metaTitle || activity.title;
@@ -215,9 +207,9 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
       </nav>
 
       <!-- Article Header -->
-      <article class="bg-white rounded-lg border border-gray-200 p-8 mb-8">
-        <header class="mb-8">
-          <div class="flex items-center gap-3 mb-4">
+      <article class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-8">
+        <header class="px-8 pt-8 pb-6 border-b border-gray-100">
+          <div class="flex items-center gap-2 mb-4">
             <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100">
               {categoryLabel}
             </span>
@@ -228,13 +220,13 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
             )}
           </div>
 
-          <h1 class="text-4xl font-bold mb-4">{activity.title}</h1>
+          <h1 class="text-3xl md:text-4xl font-bold leading-tight mb-3">{activity.title}</h1>
 
           {activity.description && (
-            <p class="text-xl text-gray-600 mb-6">{activity.description}</p>
+            <p class="text-lg text-gray-600 mb-5 leading-relaxed">{activity.description}</p>
           )}
 
-          <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-3 text-sm text-gray-500">
             <time datetime={activity.publishedAt}>
               {new Date(activity.publishedAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
                 year: 'numeric',
@@ -242,15 +234,15 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
                 day: 'numeric'
               })}
             </time>
-            <span>•</span>
+            <span class="text-gray-300">|</span>
             <span>{readingTime} {lang === 'zh' ? '分钟阅读' : 'min read'}</span>
-            <span>•</span>
+            <span class="text-gray-300">|</span>
             <span>{activity.viewCount + 1} {lang === 'zh' ? '次浏览' : 'views'}</span>
           </div>
         </header>
 
         <!-- Article Content -->
-        <div class="rich-content prose prose-lg max-w-none">
+        <div class="rich-content px-8 py-8">
           <div set:html={sanitizeRichText(activity.content) || '<p>' + richTextToPlainText(activity.content) + '</p>'} />
         </div>
       </article>
@@ -280,75 +272,145 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
 </html>
 
 <style>
-  .prose {
-    --tw-prose-body: rgb(55 65 81);
-    --tw-prose-headings: rgb(17 24 39);
-    --tw-prose-links: rgb(37 99 235);
-    --tw-prose-bold: rgb(17 24 39);
-    --tw-prose-code: rgb(219 39 119);
+  /* ===== 文章正文排版 ===== */
+  .rich-content {
+    font-size: 1.0625rem;
+    line-height: 1.9;
+    color: #333a47;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
-  .prose h2 {
+  /* 段落：增加首行缩进替代方案——用更大的段间距保持呼吸感 */
+  .rich-content p {
+    margin: 0 0 1.4em;
+  }
+
+  /* 标题层级 */
+  .rich-content h2 {
     font-size: 1.5rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
     font-weight: 700;
+    color: var(--theme-primary);
+    margin: 2.4em 0 1em;
+    padding-bottom: 0.4em;
+    border-bottom: 2px solid var(--theme-border);
+    letter-spacing: 0.01em;
   }
 
-  .prose h3 {
+  .rich-content h3 {
     font-size: 1.25rem;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
     font-weight: 600;
+    color: var(--theme-primary);
+    margin: 2em 0 0.8em;
   }
 
-  .prose p {
-    margin-bottom: 1.25rem;
-    line-height: 1.75;
+  /* 列表：清晰的缩进与间距 */
+  .rich-content ul,
+  .rich-content ol {
+    margin: 0 0 1.4em;
+    padding-left: 1.75em;
   }
 
-  .prose ul, .prose ol {
-    margin-bottom: 1.25rem;
-    padding-left: 1.625rem;
+  .rich-content li {
+    margin-bottom: 0.5em;
+    padding-left: 0.25em;
   }
 
-  .prose li {
-    margin-bottom: 0.5rem;
+  .rich-content ul > li {
+    list-style-type: disc;
   }
 
-  .prose blockquote {
-    border-left: 4px solid rgb(209 213 219);
-    padding-left: 1rem;
+  .rich-content ol > li {
+    list-style-type: decimal;
+  }
+
+  /* 引用块：与暖色主题协调的左边框 */
+  .rich-content blockquote {
+    border-left: 4px solid var(--theme-accent);
+    background-color: var(--theme-accent-soft);
+    padding: 1em 1.25em;
+    margin: 0 0 1.4em;
+    border-radius: 0 0.375rem 0.375rem 0;
+    color: #5a4a42;
     font-style: italic;
-    color: rgb(75 85 99);
-    margin-bottom: 1.25rem;
   }
 
-  .prose pre {
-    background-color: rgb(243 244 246);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    margin-bottom: 1.25rem;
+  .rich-content blockquote p:last-child {
+    margin-bottom: 0;
   }
 
-  .prose code {
-    background-color: rgb(243 244 246);
-    padding: 0.125rem 0.25rem;
+  /* 行内代码 */
+  .rich-content code {
+    background-color: rgba(15, 50, 91, 0.08);
+    color: var(--theme-accent);
+    padding: 0.15em 0.4em;
     border-radius: 0.25rem;
     font-size: 0.875em;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   }
 
-  .prose img {
+  /* 代码块 */
+  .rich-content pre {
+    background-color: var(--theme-primary);
+    color: #e8eef5;
+    padding: 1.1em 1.25em;
     border-radius: 0.5rem;
-    margin: 1.5rem 0;
+    overflow-x: auto;
+    margin: 0 0 1.4em;
+    font-size: 0.9rem;
+    line-height: 1.65;
   }
 
-  .prose hr {
-    margin: 2rem 0;
-    border-color: rgb(209 213 219);
+  .rich-content pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
   }
 
+  /* 图片：居中、圆角、阴影 */
+  .rich-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1.75em auto;
+    display: block;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 加粗与斜体 */
+  .rich-content strong {
+    font-weight: 650;
+    color: var(--theme-primary);
+  }
+
+  .rich-content em {
+    color: #555;
+  }
+
+  /* 分割线 */
+  .rich-content hr {
+    margin: 2.5em 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--theme-border), transparent);
+  }
+
+  /* 链接 */
+  .rich-content a {
+    color: var(--theme-accent);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--theme-accent) 35%, transparent);
+    text-underline-offset: 2px;
+    transition: text-decoration-color 0.15s;
+  }
+
+  .rich-content a:hover {
+    text-decoration-color: var(--theme-accent);
+  }
+
+  /* 相关文章卡片截断 */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

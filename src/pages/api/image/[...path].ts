@@ -8,6 +8,11 @@ export const GET: APIRoute = async ({ params }) => {
       return new Response('Not found', { status: 404 });
     }
 
+    // Only allow access to editor-images prefix
+    if (!filename.startsWith('editor-images/')) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     // Get object from R2 using native Cloudflare API
     const object = await env.R2.get(filename);
 

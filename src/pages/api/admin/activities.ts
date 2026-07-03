@@ -13,7 +13,7 @@ import { env } from 'cloudflare:workers';
 export const GET: APIRoute = async ({ url }) => {
   try {
     const db = getDb(env.DB);
-    const activities = await db
+    const activityList = await db
       .select({
         id: activities.id,
         slug: activities.slug,
@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ url }) => {
       .orderBy(desc(activities.published_at))
       .limit(50);
 
-    return new Response(JSON.stringify(activities), {
+    return new Response(JSON.stringify(activityList), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {

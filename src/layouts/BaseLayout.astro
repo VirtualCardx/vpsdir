@@ -21,7 +21,10 @@ const { title, description, lang = 'zh', alternates, jsonLd } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#2563eb" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap.xml" />
     <SEO title={title} description={description} alternates={alternates} jsonLd={jsonLd} />
   </head>
   <body class="min-h-screen flex flex-col bg-gray-50 text-gray-900 antialiased">

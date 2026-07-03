@@ -24,46 +24,44 @@ const categories = await db
   .from(activityCategories)
   .orderBy(activityCategories.sort_order);
 
-// Get published activities
-const allActivitiesData = await db
-  .select()
+// Get published activities with content and category via JOINs
+const activityRows = await db
+  .select({
+    id: activities.id,
+    slug: activities.slug,
+    categoryId: activities.category_id,
+    publishedAt: activities.published_at,
+    isFeatured: activities.is_featured,
+    viewCount: activities.view_count,
+    title: activitiesContent.title,
+    description: activitiesContent.description,
+    content: activitiesContent.content,
+    categorySlug: activityCategories.slug,
+    categoryIcon: activityCategories.icon,
+  })
   .from(activities)
+  .leftJoin(
+    activitiesContent,
+    and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
+  )
+  .leftJoin(activityCategories, eq(activities.category_id, activityCategories.id))
   .where(eq(activities.is_active, true))
   .orderBy(desc(activities.is_featured), desc(activities.published_at))
   .limit(50);
 
-// Get content and category info for each activity
-const allActivities = await Promise.all(
-  allActivitiesData.map(async (activity) => {
-    const content = await db
-      .select()
-      .from(activitiesContent)
-      .where(and(eq(activitiesContent.activity_id, activity.id), eq(activitiesContent.lang, lang)))
-      .limit(1)
-      .then(rows => rows[0]);
-
-    const category = await db
-      .select()
-      .from(activityCategories)
-      .where(eq(activityCategories.id, activity.category_id))
-      .limit(1)
-      .then(rows => rows[0]);
-
-    return {
-      id: activity.id,
-      slug: activity.slug,
-      categoryId: activity.category_id,
-      publishedAt: activity.published_at,
-      isFeatured: activity.is_featured,
-      viewCount: activity.view_count,
-      title: content?.title || '',
-      description: content?.description || '',
-      content: content?.content || '',
-      categorySlug: category?.slug || '',
-      categoryIcon: category?.icon || '',
-    };
-  })
-);
+const allActivities = activityRows.map((row) => ({
+  id: row.id,
+  slug: row.slug,
+  categoryId: row.categoryId,
+  publishedAt: row.publishedAt,
+  isFeatured: row.isFeatured,
+  viewCount: row.viewCount,
+  title: row.title || '',
+  description: row.description || '',
+  content: row.content || '',
+  categorySlug: row.categorySlug || '',
+  categoryIcon: row.categoryIcon || '',
+}));
 
 const siteName = t(lang, 'site.title');
 const pageTitle = lang === 'zh' ? '最新活动' : 'Latest Activities';
@@ -80,7 +78,7 @@ const pageDesc = lang === 'zh'
     <title>{pageTitle} - {siteName}</title>
     <meta name="description" content={pageDesc} />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={`/activities/`} />
+    <link rel="canonical" href={`/${lang}/activities/`} />
 
     <!-- Open Graph -->
     <meta property="og:title" content={`${pageTitle} - ${siteName}`} />

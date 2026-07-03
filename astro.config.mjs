@@ -10,4 +10,8 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  // API 端点通过 Bearer Token 鉴权，需要允许跨站 POST 请求（JSON / multipart）
+  security: {
+    checkOrigin: false,
+  },
 });

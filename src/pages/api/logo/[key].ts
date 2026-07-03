@@ -8,6 +8,11 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response('R2 not configured', { status: 500 });
   }
 
+  // Only allow access to logos prefix
+  if (!key || !(key.startsWith('logos/') || key.startsWith('logos%2F'))) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   try {
     const object = await env.R2.get(key);
 
