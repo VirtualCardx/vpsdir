@@ -39,8 +39,14 @@ const content = await db
 const name = content?.name || (lang === 'zh' ? provider.slug_zh : provider.slug_en);
 const desc = content?.desc;
 const descText = richTextToPlainText(desc);
-const metaTitle = content?.meta_title || name;
-const metaDesc = content?.meta_desc || descText || '';
+const categoryLabel = t(lang as Locale, `categories.${provider.category}`);
+const metaTitle = content?.meta_title || `${name} - ${t(lang as Locale, 'site.brand')}`;
+// 始终保证 meta description 有内容：DB > 正文摘要 > 通用兜底文案
+const metaDesc = content?.meta_desc
+  || descText
+  || (lang === 'zh'
+    ? `${name} 是一家${categoryLabel}服务商，查看 ${t(lang as Locale, 'site.brand')} 上的详细介绍、用户评分与网友评测。`
+    : `${name} is a ${categoryLabel} provider. See detailed info, ratings and reviews on ${t(lang as Locale, 'site.brand')}.`);
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 
 const siteUrl = Astro.url.origin;
@@ -104,7 +110,7 @@ const jsonLd = {
           {tags.length > 0 && (
             <div class="flex flex-wrap gap-2 mt-3">
               {tags.map((tag) => (
-                <span class="inline-block text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                <span class="inline-block text-xs px-2 py-1 tag-chip rounded-full">
                   {tag}
                 </span>
               ))}

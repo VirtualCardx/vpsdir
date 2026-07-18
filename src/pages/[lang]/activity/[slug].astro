@@ -4,7 +4,7 @@ import Header from '../../../components/Header.astro';
 import Footer from '../../../components/Footer.astro';
 import { t } from '../../../i18n/utils';
 import type { Locale } from '../../../i18n/config';
-import { isValidLocale } from '../../../i18n/config';
+import { isValidLocale, locales } from '../../../i18n/config';
 import { getDb } from '../../../lib/db';
 import { activities, activitiesContent, activityCategories } from '../../../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
@@ -20,12 +20,64 @@ if (!isValidLocale(lang)) {
 
 const db = getDb(env.DB);
 
-// Get activity
-const activityData = await db
-  .select()
+const getActivityByLocalizedSlug = (activitySlug: string) =>
+  db
+    .select({
+      id: activities.id,
+      baseSlug: activities.slug,
+      categoryId: activities.category_id,
+      publishedAt: activities.published_at,
+      isFeatured: activities.is_featured,
+      viewCount: activities.view_count,
+      contentSlug: activitiesContent.slug,
+      title: activitiesContent.title,
+      description: activitiesContent.description,
+      content: activitiesContent.content,
+      metaTitle: activitiesContent.meta_title,
+      metaDesc: activitiesContent.meta_desc,
+      categorySlug: activityCategories.slug,
+      categoryIcon: activityCategories.icon,
+    })
+    .from(activities)
+    .innerJoin(
+      activitiesContent,
+      and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
+    )
+    .leftJoin(activityCategories, eq(activities.category_id, activityCategories.id))
+    .where(and(eq(activitiesContent.slug, activitySlug), eq(activities.is_active, true)))
+    .limit(1);
+
+const getActivityByBaseSlug = (activitySlug: string) =>
+  db
+    .select({
+      id: activities.id,
+      baseSlug: activities.slug,
+      categoryId: activities.category_id,
+      publishedAt: activities.published_at,
+      isFeatured: activities.is_featured,
+      viewCount: activities.view_count,
+      contentSlug: activitiesContent.slug,
+      title: activitiesContent.title,
+      description: activitiesContent.description,
+      content: activitiesContent.content,
+      metaTitle: activitiesContent.meta_title,
+      metaDesc: activitiesContent.meta_desc,
+      categorySlug: activityCategories.slug,
+      categoryIcon: activityCategories.icon,
+    })
   .from(activities)
-  .where(and(eq(activities.slug, slug), eq(activities.is_active, true)))
-  .limit(1);
+    .innerJoin(
+      activitiesContent,
+      and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
+    )
+    .leftJoin(activityCategories, eq(activities.category_id, activityCategories.id))
+    .where(and(eq(activities.slug, activitySlug), eq(activities.is_active, true)))
+    .limit(1);
+
+let activityData = await getActivityByLocalizedSlug(slug);
+if (!activityData[0]) {
+  activityData = await getActivityByBaseSlug(slug);
+}
 
 const activityBasic = activityData[0];
 
@@ -33,44 +85,36 @@ if (!activityBasic) {
   return Astro.redirect('/zh/activities/');
 }
 
-// Get content and category info
-const contentData = await db
-  .select()
-  .from(activitiesContent)
-  .where(and(eq(activitiesContent.activity_id, activityBasic.id), eq(activitiesContent.lang, lang)))
-  .limit(1);
-
-const categoryData = await db
-  .select()
-  .from(activityCategories)
-  .where(eq(activityCategories.id, activityBasic.category_id))
-  .limit(1);
-
 const activity = {
   id: activityBasic.id,
-  slug: activityBasic.slug,
-  categoryId: activityBasic.category_id,
-  publishedAt: activityBasic.published_at,
-  isFeatured: activityBasic.is_featured,
-  viewCount: activityBasic.view_count,
-  title: contentData[0]?.title || '',
-  description: contentData[0]?.description || '',
-  content: contentData[0]?.content || '',
-  metaTitle: contentData[0]?.meta_title || '',
-  metaDesc: contentData[0]?.meta_desc || '',
-  categorySlug: categoryData[0]?.slug || '',
-  categoryIcon: categoryData[0]?.icon || '',
+  slug: activityBasic.contentSlug || activityBasic.baseSlug,
+  categoryId: activityBasic.categoryId,
+  publishedAt: activityBasic.publishedAt,
+  isFeatured: activityBasic.isFeatured,
+  viewCount: activityBasic.viewCount,
+  title: activityBasic.title || '',
+  description: activityBasic.description || '',
+  content: activityBasic.content || '',
+  metaTitle: activityBasic.metaTitle || '',
+  metaDesc: activityBasic.metaDesc || '',
+  categorySlug: activityBasic.categorySlug || '',
+  categoryIcon: activityBasic.categoryIcon || '',
 };
+
+if (slug !== activity.slug) {
+  return Astro.redirect(`/${lang}/activity/${activity.slug}/`, 301);
+}
 
 // Increment view count
 await db.update(activities)
-  .set({ view_count: activityBasic.view_count + 1 })
+  .set({ view_count: activityBasic.viewCount + 1 })
   .where(eq(activities.id, activityBasic.id));
 
 // Get related activities with content via JOINs
 const relatedRows = await db
   .select({
-    slug: activities.slug,
+    slug: activitiesContent.slug,
+    fallbackSlug: activities.slug,
     title: activitiesContent.title,
     publishedAt: activities.published_at,
     categorySlug: activityCategories.slug,
@@ -90,16 +134,21 @@ const relatedRows = await db
   .limit(4);
 
 const relatedActivities = relatedRows.map((row) => ({
-  slug: row.slug,
+  slug: row.slug || row.fallbackSlug,
   title: row.title || '',
   publishedAt: row.publishedAt,
   categorySlug: row.categorySlug || '',
 }));
 
-const siteName = t(lang, 'site.title');
+const siteName = t(lang, 'site.brand');
 const pageTitle = activity.metaTitle || activity.title;
 const pageDesc = activity.metaDesc || activity.description || richTextToPlainText(activity.content).slice(0, 160);
-const pageUrl = `${Astro.site}/${lang}/activity/${slug}/`;
+const siteUrl = Astro.url.origin;
+const pageUrl = `${siteUrl}/${lang}/activity/${activity.slug}/`;
+const alternates = locales.map((l) => ({
+  lang: l,
+  href: `${siteUrl}/${l}/activity/${activity.slug}/`,
+}));
 const categoryLabel = activity.categorySlug;
 
 // Get content as plain text for SEO
@@ -134,6 +183,10 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDesc} />
 
+    <!-- Hreflang -->
+    {alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+    <link rel="alternate" hreflang="x-default" href={`${siteUrl}/zh/activity/${activity.slug}/`} />
+
     <!-- Schema.org structured data for Article -->
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
@@ -156,7 +209,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
         "name": siteName,
         "logo": {
           "@type": "ImageObject",
-          "url": `${Astro.site}/logo.png`
+          "url": `${siteUrl}/favicon.svg`
         }
       },
       "mainEntityOfPage": {
@@ -174,13 +227,13 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
           "@type": "ListItem",
           "position": 1,
           "name": siteName,
-          "item": `${Astro.site}/${lang}/`
+          "item": `${siteUrl}/${lang}/`
         },
         {
           "@type": "ListItem",
           "position": 2,
           "name": lang === 'zh' ? "最新活动" : "Latest Activities",
-          "item": `${Astro.site}/${lang}/activities/`
+          "item": `${siteUrl}/${lang}/activities/`
         },
         {
           "@type": "ListItem",
@@ -282,22 +335,57 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 段落：增加首行缩进替代方案——用更大的段间距保持呼吸感 */
-  .rich-content p {
+  :global(.rich-content p) {
     margin: 0 0 1.4em;
   }
 
   /* 标题层级 */
-  .rich-content h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
+  :global(.rich-content h2) {
+    position: relative;
+    font-size: 1.55rem;
+    font-weight: 750;
     color: var(--theme-primary);
-    margin: 2.4em 0 1em;
-    padding-bottom: 0.4em;
-    border-bottom: 2px solid var(--theme-border);
-    letter-spacing: 0.01em;
+    line-height: 1.35;
+    margin: 1.65em 0 0.9em;
+    padding: 0.55em 0 0.55em 1.05em;
+    border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 82%, transparent);
+    letter-spacing: 0;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--theme-primary-soft) 70%, transparent),
+        transparent 78%
+      );
+    border-radius: 0.35rem 0 0 0.35rem;
   }
 
-  .rich-content h3 {
+  :global(.rich-content h2::before) {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.52em;
+    bottom: 0.52em;
+    width: 0.28rem;
+    border-radius: 999px;
+    background-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent-soft) 80%, transparent);
+  }
+
+  :global(.rich-content h2::after) {
+    content: '';
+    position: absolute;
+    left: 1.05em;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent) 45%, transparent),
+      transparent 62%
+    );
+  }
+
+  :global(.rich-content h3) {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--theme-primary);
@@ -305,27 +393,27 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 列表：清晰的缩进与间距 */
-  .rich-content ul,
-  .rich-content ol {
+  :global(.rich-content ul),
+  :global(.rich-content ol) {
     margin: 0 0 1.4em;
     padding-left: 1.75em;
   }
 
-  .rich-content li {
+  :global(.rich-content li) {
     margin-bottom: 0.5em;
     padding-left: 0.25em;
   }
 
-  .rich-content ul > li {
+  :global(.rich-content ul > li) {
     list-style-type: disc;
   }
 
-  .rich-content ol > li {
+  :global(.rich-content ol > li) {
     list-style-type: decimal;
   }
 
   /* 引用块：与暖色主题协调的左边框 */
-  .rich-content blockquote {
+  :global(.rich-content blockquote) {
     border-left: 4px solid var(--theme-accent);
     background-color: var(--theme-accent-soft);
     padding: 1em 1.25em;
@@ -335,12 +423,12 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
     font-style: italic;
   }
 
-  .rich-content blockquote p:last-child {
+  :global(.rich-content blockquote p:last-child) {
     margin-bottom: 0;
   }
 
   /* 行内代码 */
-  .rich-content code {
+  :global(.rich-content code) {
     background-color: rgba(15, 50, 91, 0.08);
     color: var(--theme-accent);
     padding: 0.15em 0.4em;
@@ -350,7 +438,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 代码块 */
-  .rich-content pre {
+  :global(.rich-content pre) {
     background-color: var(--theme-primary);
     color: #e8eef5;
     padding: 1.1em 1.25em;
@@ -361,7 +449,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
     line-height: 1.65;
   }
 
-  .rich-content pre code {
+  :global(.rich-content pre code) {
     background-color: transparent;
     color: inherit;
     padding: 0;
@@ -370,7 +458,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 图片：居中、圆角、阴影 */
-  .rich-content img {
+  :global(.rich-content img) {
     max-width: 100%;
     height: auto;
     border-radius: 0.5rem;
@@ -380,17 +468,17 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 加粗与斜体 */
-  .rich-content strong {
+  :global(.rich-content strong) {
     font-weight: 650;
     color: var(--theme-primary);
   }
 
-  .rich-content em {
+  :global(.rich-content em) {
     color: #555;
   }
 
   /* 分割线 */
-  .rich-content hr {
+  :global(.rich-content hr) {
     margin: 2.5em 0;
     border: none;
     height: 1px;
@@ -398,7 +486,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
   }
 
   /* 链接 */
-  .rich-content a {
+  :global(.rich-content a) {
     color: var(--theme-accent);
     text-decoration: underline;
     text-decoration-color: color-mix(in srgb, var(--theme-accent) 35%, transparent);
@@ -406,7 +494,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
     transition: text-decoration-color 0.15s;
   }
 
-  .rich-content a:hover {
+  :global(.rich-content a:hover) {
     text-decoration-color: var(--theme-accent);
   }
 

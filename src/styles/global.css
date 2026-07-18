@@ -334,6 +334,33 @@ body {
   color: var(--theme-accent-hover);
 }
 
+/* ===== 首页标签芯片 ===== */
+/* 卡片内的小标签 */
+.tag-chip {
+  background-color: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  font-weight: 500;
+}
+
+/* 搜索区的筛选标签按钮（默认态） */
+.tag-chip-btn {
+  background-color: var(--theme-primary-soft);
+  color: var(--theme-primary);
+  border: 1px solid transparent;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tag-chip-btn:hover {
+  background-color: color-mix(in srgb, var(--theme-primary-soft) 70%, var(--theme-primary) 12%);
+}
+
+/* 筛选标签按钮选中态 */
+.tag-chip-btn.is-active {
+  background-color: var(--theme-primary);
+  color: #fff;
+}
+
 .admin-action-link {
   font-size: 0.75rem;
   color: var(--theme-accent);

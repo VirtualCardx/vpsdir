@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://vpsdir.com/sitemap.xml
+Sitemap: https://vpsdex.com/sitemap.xml

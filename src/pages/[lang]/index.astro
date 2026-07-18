@@ -67,7 +67,7 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
 const homeJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: t(lang as Locale, 'site.title'),
+  name: t(lang as Locale, 'site.brand'),
   description: t(lang as Locale, 'site.description'),
   url: `${Astro.url.origin}/${lang}/`,
   potentialAction: {
@@ -214,8 +214,7 @@ const homeJsonLd = {
       // Reset all tag buttons
       const tagButtons = searchTags.querySelectorAll('[data-tag]');
       tagButtons.forEach(button => {
-        button.classList.remove('bg-blue-500', 'text-white');
-        button.classList.add('bg-blue-50', 'text-blue-700');
+        button.classList.remove('is-active');
       });
 
       filterProviders();
@@ -279,7 +278,7 @@ const homeJsonLd = {
                       <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">${escapeHtml(category)}</span>
                       ${tags.length > 0 ? `
                         <div class="flex flex-wrap gap-1 mt-2">
-                          ${tags.map(tag => `<span class="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+                          ${tags.map(tag => `<span class="inline-block text-xs px-2 py-0.5 tag-chip rounded-full">${escapeHtml(tag)}</span>`).join('')}
                         </div>
                       ` : ''}
                       ${content.desc ? `<p class="text-sm text-gray-500 mt-2 line-clamp-2">${escapeHtml(content.desc)}</p>` : ''}
@@ -308,7 +307,7 @@ const homeJsonLd = {
 
     if (allTags.size > 0) {
       searchTags.innerHTML = Array.from(allTags).map(tag => `
-        <button class="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors" data-tag="${escapeHtml(tag)}">
+        <button class="text-xs px-3 py-1 tag-chip-btn rounded-full transition-colors" data-tag="${escapeHtml(tag)}">
           ${escapeHtml(tag)}
         </button>
       `).join('');
@@ -318,10 +317,12 @@ const homeJsonLd = {
         if (tagButton) {
           const tag = tagButton.dataset.tag;
           currentTagFilter = currentTagFilter === tag ? '' : tag;
-          tagButton.classList.toggle('bg-blue-500', currentTagFilter === tag);
-          tagButton.classList.toggle('text-white', currentTagFilter === tag);
-          tagButton.classList.toggle('bg-blue-50', currentTagFilter !== tag);
-          tagButton.classList.toggle('text-blue-700', currentTagFilter !== tag);
+          // 先清除所有按钮的选中态
+          searchTags.querySelectorAll('[data-tag]').forEach(btn => btn.classList.remove('is-active'));
+          // 仅给当前选中按钮加选中态
+          if (currentTagFilter) {
+            tagButton.classList.add('is-active');
+          }
           filterProviders();
         }
       });

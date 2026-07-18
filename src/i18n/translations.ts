@@ -3,8 +3,9 @@ import type { Locale } from './config';
 const translations: Record<Locale, Record<string, Record<string, string>>> = {
   zh: {
     site: {
-      title: '服务商目录',
-      description: '发现最佳VPS、域名和企业邮箱服务商',
+      title: 'VPSDEX - 全球VPS主机与域名服务商目录',
+      description: 'VPSDEX 收录优质 VPS 主机、域名注册、企业邮箱与 CDN 加速服务商，提供真实评测与用户评分，帮你快速挑选高性价比服务商。',
+      brand: 'VPSDEX',
     },
     nav: {
       home: '首页',
@@ -68,8 +69,9 @@ const translations: Record<Locale, Record<string, Record<string, string>>> = {
   },
   en: {
     site: {
-      title: 'Provider Directory',
-      description: 'Discover the best VPS, domain, and email service providers',
+      title: 'VPSDEX - VPS Hosting & Domain Provider Directory',
+      description: 'VPSDEX lists top-rated VPS hosting, domain registration, business email and CDN providers with real reviews and ratings to help you find the best fit.',
+      brand: 'VPSDEX',
     },
     nav: {
       home: 'Home',

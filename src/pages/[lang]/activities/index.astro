@@ -4,7 +4,7 @@ import Header from '../../../components/Header.astro';
 import Footer from '../../../components/Footer.astro';
 import { t } from '../../../i18n/utils';
 import type { Locale } from '../../../i18n/config';
-import { isValidLocale } from '../../../i18n/config';
+import { isValidLocale, locales } from '../../../i18n/config';
 import { getDb } from '../../../lib/db';
 import { activities, activitiesContent, activityCategories } from '../../../db/schema';
 import { eq, and, desc } from 'drizzle-orm';
@@ -28,7 +28,8 @@ const categories = await db
 const activityRows = await db
   .select({
     id: activities.id,
-    slug: activities.slug,
+    slug: activitiesContent.slug,
+    fallbackSlug: activities.slug,
     categoryId: activities.category_id,
     publishedAt: activities.published_at,
     isFeatured: activities.is_featured,
@@ -51,7 +52,7 @@ const activityRows = await db
 
 const allActivities = activityRows.map((row) => ({
   id: row.id,
-  slug: row.slug,
+  slug: row.slug || row.fallbackSlug,
   categoryId: row.categoryId,
   publishedAt: row.publishedAt,
   isFeatured: row.isFeatured,
@@ -63,11 +64,13 @@ const allActivities = activityRows.map((row) => ({
   categoryIcon: row.categoryIcon || '',
 }));
 
-const siteName = t(lang, 'site.title');
+const siteName = t(lang, 'site.brand');
 const pageTitle = lang === 'zh' ? '最新活动' : 'Latest Activities';
 const pageDesc = lang === 'zh'
   ? '查看最新的VPS优惠活动、产品更新和行业资讯'
   : 'Check out the latest VPS deals, product updates, and industry news';
+const siteUrl = Astro.url.origin;
+const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/activities/` }));
 ---
 
 <!doctype html>
@@ -78,12 +81,24 @@ const pageDesc = lang === 'zh'
     <title>{pageTitle} - {siteName}</title>
     <meta name="description" content={pageDesc} />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={`/${lang}/activities/`} />
+    <link rel="canonical" href={`${siteUrl}/${lang}/activities/`} />
 
     <!-- Open Graph -->
     <meta property="og:title" content={`${pageTitle} - ${siteName}`} />
     <meta property="og:description" content={pageDesc} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={`${siteUrl}/${lang}/activities/`} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={`${pageTitle} - ${siteName}`} />
+    <meta name="twitter:description" content={pageDesc} />
+
+    <!-- Hreflang -->
+    {alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+    <link rel="alternate" hreflang="x-default" href={`${siteUrl}/zh/activities/`} />
 
     <!-- Schema.org structured data -->
     <script type="application/ld+json">
@@ -101,7 +116,7 @@ const pageDesc = lang === 'zh'
               "@type": "Article",
               "headline": activity.title,
               "description": activity.description || richTextToPlainText(activity.content).slice(0, 160),
-              "url": `${Astro.site}/${lang}/activity/${activity.slug}/`,
+              "url": `${siteUrl}/${lang}/activity/${activity.slug}/`,
               "datePublished": activity.publishedAt,
               "genre": activity.categorySlug
             }
@@ -123,21 +138,25 @@ const pageDesc = lang === 'zh'
       </div>
 
       <!-- Category Filter -->
-      <div class="flex justify-center gap-2 mb-8">
-        <button class="px-4 py-2 rounded-full text-sm font-medium bg-gray-900 text-white">
+      <div id="category-filter" class="flex flex-wrap justify-center gap-2 mb-8">
+        <button type="button" class="category-filter-btn is-active" data-category="all" aria-pressed="true">
           {lang === 'zh' ? '全部' : 'All'}
         </button>
         {categories.map((cat) => (
-          <button class="px-4 py-2 rounded-full text-sm font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">
+          <button type="button" class="category-filter-btn" data-category={cat.slug} aria-pressed="false">
             {cat.slug}
           </button>
         ))}
       </div>
 
       <!-- Activities Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div id="activities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {allActivities.map((activity) => (
-          <article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+          <article
+            class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+            data-activity-card
+            data-activity-category={activity.categorySlug}
+          >
             <div class="p-6">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-xs">
@@ -169,6 +188,10 @@ const pageDesc = lang === 'zh'
         ))}
       </div>
 
+      <div id="filtered-empty" class="text-center py-12 hidden">
+        <p class="text-gray-500">{lang === 'zh' ? '该分类暂无活动' : 'No activities in this category'}</p>
+      </div>
+
       {allActivities.length === 0 && (
         <div class="text-center py-12">
           <p class="text-gray-500">{lang === 'zh' ? '暂无活动' : 'No activities yet'}</p>
@@ -177,10 +200,86 @@ const pageDesc = lang === 'zh'
     </main>
 
     <Footer lang={lang} />
+    <script>
+      const filterBar = document.getElementById('category-filter');
+      const filterButtons = Array.from(document.querySelectorAll('.category-filter-btn[data-category]'));
+      const activityCards = Array.from(document.querySelectorAll('[data-activity-card]'));
+      const filteredEmpty = document.getElementById('filtered-empty');
+
+      function applyCategoryFilter(category) {
+        let visibleCount = 0;
+
+        for (const button of filterButtons) {
+          const isActive = button.dataset.category === category;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        }
+
+        for (const card of activityCards) {
+          const matches = category === 'all' || card.dataset.activityCategory === category;
+          card.hidden = !matches;
+          if (matches) visibleCount += 1;
+        }
+
+        if (filteredEmpty) {
+          filteredEmpty.classList.toggle('hidden', visibleCount !== 0);
+        }
+      }
+
+      filterBar?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-category]');
+        if (!button) return;
+
+        const category = button.dataset.category || 'all';
+        applyCategoryFilter(category);
+
+        const url = new URL(window.location.href);
+        if (category === 'all') {
+          url.searchParams.delete('category');
+        } else {
+          url.searchParams.set('category', category);
+        }
+        window.history.replaceState({}, '', url);
+      });
+
+      const initialCategory = new URLSearchParams(window.location.search).get('category');
+      if (initialCategory && filterButtons.some((button) => button.dataset.category === initialCategory)) {
+        applyCategoryFilter(initialCategory);
+      }
+    </script>
   </body>
 </html>
 
 <style>
+  .category-filter-btn {
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    background-color: #fff;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    padding: 0.5rem 1rem;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .category-filter-btn:hover {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background-color: var(--theme-primary-soft);
+  }
+
+  .category-filter-btn.is-active {
+    border-color: var(--theme-primary);
+    background-color: var(--theme-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 22%, transparent);
+  }
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

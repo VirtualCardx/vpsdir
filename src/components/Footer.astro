@@ -14,7 +14,7 @@ const currentYear = new Date().getFullYear();
   <div class="container mx-auto px-4">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
       <div>
-        <h3 class="font-semibold mb-4">{t(lang, 'site.title')}</h3>
+        <h3 class="font-semibold mb-4">{t(lang, 'site.brand')}</h3>
         <p class="nav-subtitle text-sm">{t(lang, 'site.description')}</p>
       </div>
       <div>
@@ -41,7 +41,7 @@ const currentYear = new Date().getFullYear();
     </div>
     <div class="pt-8 border-t border-gray-200 text-center">
       <p class="nav-subtitle text-sm">
-        &copy; {currentYear} {t(lang, 'site.title')}. {lang === 'zh' ? '保留所有权利。' : 'All rights reserved.'}
+        &copy; {currentYear} {t(lang, 'site.brand')}. {lang === 'zh' ? '保留所有权利。' : 'All rights reserved.'}
       </p>
     </div>
   </div>
