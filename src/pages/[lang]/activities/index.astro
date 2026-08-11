@@ -130,11 +130,12 @@ const jsonLd = {
   <body class="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
     <Header lang={lang} />
 
-    <main class="flex-1 container mx-auto px-4 py-8">
+    <main class="site-main flex-1 mx-auto px-5 sm:px-6 py-8">
       <!-- Hero Section -->
-      <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold mb-4">{pageTitle}</h1>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+      <div class="home-hero text-center mb-6">
+        <p class="eyebrow">{lang === 'zh' ? '行业动态' : 'Market updates'}</p>
+        <h1 class="text-4xl font-bold mt-3 mb-4 tracking-tight">{pageTitle}</h1>
+        <p class="text-base leading-7 text-gray-600 max-w-2xl mx-auto">
           {pageDesc}
         </p>
       </div>
@@ -155,13 +156,13 @@ const jsonLd = {
       <div id="activities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {allActivities.map((activity) => (
           <article
-            class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+            class="activity-card bg-white border border-gray-200 overflow-hidden"
             data-activity-card
             data-activity-category={activity.categorySlug}
           >
             <div class="p-6">
               <div class="flex items-center gap-2 mb-3">
-                <span class="text-xs">
+                <span class="tag-chip rounded-full px-2 py-1 text-xs">
                   {activity.categorySlug}
                 </span>
                 {activity.isFeatured && (

@@ -36,19 +36,19 @@ const tags = rawTags.map(tag => {
 
 <a
   href={`/${lang}/provider/${slug}`}
-  class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+  class="provider-card block"
 >
   <div class="flex items-start gap-4">
     <img
       src={logoUrl}
       alt={content.name}
-      class="w-12 h-12 rounded object-contain flex-shrink-0 bg-gray-50"
+      class="provider-logo w-12 h-12 rounded-lg object-contain flex-shrink-0"
       loading="lazy"
       width="48"
       height="48"
     />
     <div class="flex-1 min-w-0">
-      <h3 class="font-semibold text-gray-900 truncate">{content.name}</h3>
+      <h3 class="font-semibold text-gray-900 truncate tracking-tight">{content.name}</h3>
       <span class="inline-block text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded mt-1">
         {t(lang, `categories.${provider.category}`)}
       </span>

@@ -10,8 +10,8 @@ const { lang } = Astro.props;
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="site-nav border-t py-8 mt-12">
-  <div class="container mx-auto px-4">
+<footer class="site-nav border-t py-10 mt-16">
+  <div class="site-shell mx-auto px-5 sm:px-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
       <div>
         <h3 class="font-semibold mb-4">{t(lang, 'site.brand')}</h3>

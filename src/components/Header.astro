@@ -12,12 +12,12 @@ const currentYear = new Date().getFullYear();
 ---
 
 <header class="site-nav border-b sticky top-0 z-50">
-  <div class="container mx-auto px-4 py-4">
+  <div class="site-shell mx-auto px-5 sm:px-6 py-3.5">
     <nav class="flex items-center justify-between">
-      <a href={`/${lang}/`} class="nav-brand text-lg font-bold transition-colors">
+      <a href={`/${lang}/`} class="nav-brand text-base font-bold transition-colors">
         {t(lang, 'site.brand')}
       </a>
-      <div class="flex items-center gap-6">
+      <div class="flex items-center gap-4 sm:gap-6">
         <a href={`/${lang}/`} class="nav-link text-sm transition-colors">
           {t(lang, 'nav.home')}
         </a>

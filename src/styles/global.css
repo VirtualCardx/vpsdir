@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --theme-accent: #f10c00;
-  --theme-surface: #fcf5e2;
-  --theme-page-bg: #fffdf8;
-  --theme-card-bg: #fcf5e2;
-  --theme-primary: #0f325b;
-  --theme-nav-bg: #0b2340;
-  --theme-nav-border: #1d466f;
-  --theme-nav-text: #fcf5e2;
-  --theme-nav-muted: #b7c7da;
-  --theme-accent-hover: #cc0a00;
-  --theme-primary-hover: #174775;
-  --theme-primary-soft: #e4edf7;
-  --theme-accent-soft: #fee3de;
-  --theme-border: #d8d2c4;
-  --theme-text-muted: #51627a;
+  --theme-accent: #167d75;
+  --theme-surface: #f4f7f9;
+  --theme-page-bg: #f7f9fb;
+  --theme-card-bg: #ffffff;
+  --theme-primary: #16283d;
+  --theme-nav-bg: #122235;
+  --theme-nav-border: #27394d;
+  --theme-nav-text: #f7fafc;
+  --theme-nav-muted: #b9c5d1;
+  --theme-accent-hover: #10675f;
+  --theme-primary-hover: #243d58;
+  --theme-primary-soft: #e9eef3;
+  --theme-accent-soft: #e4f2f0;
+  --theme-border: #dbe2e8;
+  --theme-text-muted: #607083;
 }
 
 html {
@@ -25,7 +25,11 @@ html {
 body {
   background-color: var(--theme-page-bg);
   color: var(--theme-primary);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  letter-spacing: -0.01em;
 }
+
+::selection { background: #cce6e2; color: var(--theme-primary); }
 
 .bg-gray-50 {
   background-color: var(--theme-page-bg);
@@ -123,6 +127,11 @@ body {
   border-color: var(--theme-nav-border);
   color: var(--theme-nav-text);
 }
+
+.site-nav { box-shadow: 0 1px 0 rgba(255,255,255,.03); }
+.site-shell { max-width: 1180px; }
+.site-main { max-width: 1180px; width: 100%; }
+.nav-brand { letter-spacing: .08em; }
 
 .site-nav a,
 .admin-nav-shell a,
@@ -513,4 +522,30 @@ body {
 .admin-badge-danger {
   background-color: #ffe2db;
   color: #b42318;
+}
+
+/* Public site */
+.home-hero { padding: 3.5rem 0 2rem; }
+.eyebrow { color: var(--theme-accent); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.hero-title { max-width: 760px; margin-top: .75rem; color: var(--theme-primary); font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.08; font-weight: 720; letter-spacing: -.04em; }
+.hero-copy { max-width: 680px; margin-top: 1rem; color: var(--theme-text-muted); font-size: 1rem; line-height: 1.75; }
+.search-panel { margin-top: 2rem; padding: .75rem; border: 1px solid var(--theme-border); border-radius: .875rem; background: #fff; box-shadow: 0 12px 35px rgba(22,40,61,.07); }
+.search-input { width: 100%; height: 3rem; padding: 0 1rem 0 2.75rem; border: 0; border-radius: .625rem; color: var(--theme-primary); background: transparent; }
+.search-input:focus { outline: none; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--theme-accent) 35%, transparent); }
+.search-button { height: 3rem; padding: 0 1.25rem; border-radius: .625rem; background: var(--theme-primary); color: white; font-size: .875rem; font-weight: 650; }
+.search-button:hover { background: var(--theme-primary-hover); }
+.clear-button { height: 3rem; padding: 0 .875rem; color: var(--theme-text-muted); font-size: .875rem; }
+.clear-button:hover { color: var(--theme-primary); }
+.category-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; padding-bottom: .75rem; border-bottom: 1px solid var(--theme-border); }
+.category-count { color: #8794a3; font-size: .75rem; }
+.provider-card { height: 100%; border: 1px solid var(--theme-border); border-radius: .75rem; padding: 1.25rem; background: #fff; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.provider-card:hover { border-color: #b8c5d0; box-shadow: 0 10px 28px rgba(22,40,61,.08); transform: translateY(-2px); }
+.provider-logo { border: 1px solid #edf1f4; background: #fff; }
+.activity-card { border-radius: .75rem; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.activity-card:hover { border-color: #b8c5d0; box-shadow: 0 10px 28px rgba(22,40,61,.08); transform: translateY(-2px); }
+
+@media (max-width: 640px) {
+  .home-hero { padding-top: 2.25rem; }
+  .search-actions { display: grid; grid-template-columns: 1fr auto; }
+  .search-field { grid-column: 1 / -1; }
 }
