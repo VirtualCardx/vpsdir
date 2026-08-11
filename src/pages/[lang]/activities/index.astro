@@ -71,6 +71,30 @@ const pageDesc = lang === 'zh'
   : 'Check out the latest VPS deals, product updates, and industry news';
 const siteUrl = Astro.url.origin;
 const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/activities/` }));
+
+// 构建结构化数据对象，渲染时用 JSON.stringify 序列化为合法 JSON-LD
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: pageTitle,
+  description: pageDesc,
+  url: `${siteUrl}/${lang}/activities/`,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: allActivities.map((activity, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Article',
+        headline: activity.title,
+        description: activity.description || richTextToPlainText(activity.content).slice(0, 160),
+        url: `${siteUrl}/${lang}/activity/${activity.slug}/`,
+        datePublished: activity.publishedAt,
+        genre: activity.categorySlug,
+      },
+    })),
+  },
+};
 ---
 
 <!doctype html>
@@ -101,29 +125,7 @@ const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/activit
     <link rel="alternate" hreflang="x-default" href={`${siteUrl}/zh/activities/`} />
 
     <!-- Schema.org structured data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": pageTitle,
-        "description": pageDesc,
-        "mainEntity": {
-          "@type": "ItemList",
-          "itemListElement": allActivities.map((activity, index) => ({
-            "@type": "ListItem",
-            "position": index + 1,
-            "item": {
-              "@type": "Article",
-              "headline": activity.title,
-              "description": activity.description || richTextToPlainText(activity.content).slice(0, 160),
-              "url": `${siteUrl}/${lang}/activity/${activity.slug}/`,
-              "datePublished": activity.publishedAt,
-              "genre": activity.categorySlug
-            }
-          }))
-        }
-      }
-    </script>
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
     <Header lang={lang} />
