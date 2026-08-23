@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "clean": "node scripts/clean.mjs",
     "build": "node scripts/clean.mjs && astro build",
+    "test:seo": "node scripts/verify-seo-source.mjs",
     "preview": "astro preview",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply vpsdir-db --local",

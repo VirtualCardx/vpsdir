@@ -65,11 +65,11 @@ const allActivities = activityRows.map((row) => ({
 }));
 
 const siteName = t(lang, 'site.brand');
-const pageTitle = lang === 'zh' ? '最新活动' : 'Latest Activities';
+const pageTitle = lang === 'zh' ? 'VPS评测、优惠与选购指南' : 'VPS Reviews, Deals & Hosting Guides';
 const pageDesc = lang === 'zh'
-  ? '查看最新的VPS优惠活动、产品更新和行业资讯'
-  : 'Check out the latest VPS deals, product updates, and industry news';
-const siteUrl = Astro.url.origin;
+  ? '查看 VPS 主机评测、优惠活动、产品更新、线路分析与选购指南，了解价格、适用场景和重要限制。'
+  : 'Read VPS hosting reviews, verified deals, product updates, routing analysis and buying guides with pricing context and practical limitations.';
+const siteUrl = 'https://vpsdex.com';
 const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/activities/` }));
 
 // 构建结构化数据对象，渲染时用 JSON.stringify 序列化为合法 JSON-LD

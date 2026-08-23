@@ -12,7 +12,10 @@ import { richTextToPlainText } from '../../lib/rich-text';
 
 const lang = Astro.params.lang as string;
 if (!isValidLocale(lang)) {
-  return Astro.redirect(`/${defaultLocale}/`);
+  return new Response('Not Found', {
+    status: 404,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
 const db = getDb(env.DB);
@@ -48,7 +51,7 @@ for (const row of data) {
   categories.get(cat)!.push(row);
 }
 
-const siteUrl = Astro.url.origin;
+const siteUrl = 'https://vpsdex.com';
 const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
 
 // Prepare data for client-side search
@@ -64,17 +67,56 @@ const providerSearchData = Array.from(categories.entries()).flatMap(([cat, items
       : null,
   })));
 
+const allTags = new Set<string>();
+for (const row of data) {
+  if (!row.providers.tags) continue;
+  try {
+    const parsed = JSON.parse(row.providers.tags);
+    for (const tag of parsed) {
+      const label = typeof tag === 'string' ? tag : tag[lang] || tag.zh || tag.en;
+      if (label) allTags.add(label);
+    }
+  } catch {
+    // Ignore malformed legacy tag JSON rather than breaking the homepage.
+  }
+}
+const homepageTags = Array.from(allTags);
+
 const homeJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: t(lang as Locale, 'site.brand'),
   description: t(lang as Locale, 'site.description'),
-  url: `${Astro.url.origin}/${lang}/`,
+  url: `${siteUrl}/${lang}/`,
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${Astro.url.origin}/${lang}/?q={search_term_string}`,
+    target: `${siteUrl}/${lang}/?q={search_term_string}`,
     'query-input': 'required name=search_term_string',
   },
+};
+
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: t(lang as Locale, 'site.brand'),
+  url: `${siteUrl}/${lang}/`,
+  description: t(lang as Locale, 'site.description'),
+};
+
+const itemListJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: lang === 'zh' ? 'VPSDEX 收录服务商' : 'VPSDEX listed providers',
+  numberOfItems: providerSearchData.length,
+  itemListElement: providerSearchData.slice(0, 30).map((item, index) => {
+    const slug = lang === 'zh' ? item.providers.slug_zh : item.providers.slug_en;
+    return {
+      '@type': 'ListItem',
+      position: index + 1,
+      url: `${siteUrl}/${lang}/provider/${slug}/`,
+      name: item.providers_content?.name || slug,
+    };
+  }),
 };
 ---
 
@@ -84,6 +126,7 @@ const homeJsonLd = {
   lang={lang as Locale}
   alternates={alternates}
   jsonLd={homeJsonLd}
+  extraJsonLd={[orgJsonLd, itemListJsonLd]}
 >
   <section class="home-hero">
     <p class="eyebrow">{lang === 'zh' ? '服务商目录' : 'Provider directory'}</p>
@@ -121,7 +164,20 @@ const homeJsonLd = {
       </button>
     </div>
     <div id="search-tags" class="mt-3 flex flex-wrap gap-2">
-      <!-- Active search tags will appear here -->
+      {homepageTags.map((tag, index) => (
+        <button
+          type="button"
+          class:list={['text-xs px-3 py-1 tag-chip-btn rounded-full transition-colors', index >= 12 && 'mobile-tag-extra']}
+          data-tag={tag}
+        >
+          {tag}
+        </button>
+      ))}
+      {homepageTags.length > 12 && (
+        <button type="button" id="tag-toggle" class="tag-toggle text-xs px-3 py-1 rounded-full sm:hidden" aria-expanded="false">
+          {lang === 'zh' ? '展开全部' : 'Show all'}
+        </button>
+      )}
     </div>
   </div>
   </section>
@@ -158,6 +214,7 @@ const homeJsonLd = {
     const searchButton = document.getElementById('search-button');
     const clearButton = document.getElementById('clear-button');
     const searchTags = document.getElementById('search-tags');
+    const tagToggle = document.getElementById('tag-toggle');
     const providerContainer = document.getElementById('provider-container');
 
     // Escape HTML to prevent XSS
@@ -278,7 +335,7 @@ const homeJsonLd = {
               const slug = lang === 'zh' ? row.providers.slug_zh : row.providers.slug_en;
 
               return `
-                <a href="/${lang}/provider/${escapeHtml(slug)}" class="provider-card block">
+                <a href="/${lang}/provider/${escapeHtml(slug)}/" class="provider-card block">
                   <div class="flex items-start gap-4">
                     <img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(content.name)}" class="provider-logo w-12 h-12 rounded-lg object-contain flex-shrink-0" loading="lazy" width="48" height="48" />
                     <div class="flex-1 min-w-0">
@@ -306,34 +363,26 @@ const homeJsonLd = {
       `).join('');
     }
 
-    // Extract and display all unique tags (in current language)
-    const allTags = new Set();
-    allProviders.forEach(provider => {
-      const tags = parseTags(provider.providers.tags);
-      tags.forEach(tag => allTags.add(tag));
-    });
-
-    if (allTags.size > 0) {
-      searchTags.innerHTML = Array.from(allTags).map(tag => `
-        <button class="text-xs px-3 py-1 tag-chip-btn rounded-full transition-colors" data-tag="${escapeHtml(tag)}">
-          ${escapeHtml(tag)}
-        </button>
-      `).join('');
-
+    if (searchTags) {
       searchTags.addEventListener('click', function(e) {
         const tagButton = e.target.closest('[data-tag]');
         if (tagButton) {
           const tag = tagButton.dataset.tag;
           currentTagFilter = currentTagFilter === tag ? '' : tag;
-          // 先清除所有按钮的选中态
           searchTags.querySelectorAll('[data-tag]').forEach(btn => btn.classList.remove('is-active'));
-          // 仅给当前选中按钮加选中态
-          if (currentTagFilter) {
-            tagButton.classList.add('is-active');
-          }
+          if (currentTagFilter) tagButton.classList.add('is-active');
           filterProviders();
         }
       });
     }
+
+    tagToggle?.addEventListener('click', function() {
+      const expanded = tagToggle.getAttribute('aria-expanded') === 'true';
+      searchTags?.classList.toggle('tags-expanded', !expanded);
+      tagToggle.setAttribute('aria-expanded', String(!expanded));
+      tagToggle.textContent = !expanded
+        ? (lang === 'zh' ? '收起' : 'Show less')
+        : (lang === 'zh' ? '展开全部' : 'Show all');
+    });
   </script>
 </BaseLayout>

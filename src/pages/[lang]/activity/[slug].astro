@@ -82,7 +82,10 @@ if (!activityData[0]) {
 const activityBasic = activityData[0];
 
 if (!activityBasic) {
-  return Astro.redirect('/zh/activities/');
+  return new Response('Not Found', {
+    status: 404,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
 const activity = {
@@ -140,15 +143,22 @@ const relatedActivities = relatedRows.map((row) => ({
   categorySlug: row.categorySlug || '',
 }));
 
+const localizedSlugRows = await db
+  .select({ lang: activitiesContent.lang, slug: activitiesContent.slug })
+  .from(activitiesContent)
+  .where(eq(activitiesContent.activity_id, activityBasic.id));
+const localizedSlugs = new Map(localizedSlugRows.map((row) => [row.lang, row.slug]));
+
 const siteName = t(lang, 'site.brand');
 const pageTitle = activity.metaTitle || activity.title;
 const pageDesc = activity.metaDesc || activity.description || richTextToPlainText(activity.content).slice(0, 160);
-const siteUrl = Astro.url.origin;
+const siteUrl = 'https://vpsdex.com';
 const pageUrl = `${siteUrl}/${lang}/activity/${activity.slug}/`;
 const alternates = locales.map((l) => ({
   lang: l,
-  href: `${siteUrl}/${l}/activity/${activity.slug}/`,
+  href: `${siteUrl}/${l}/activity/${localizedSlugs.get(l) || activityBasic.baseSlug}/`,
 }));
+const xDefaultUrl = `${siteUrl}/zh/activity/${localizedSlugs.get('zh') || activityBasic.baseSlug}/`;
 const categoryLabel = activity.categorySlug;
 
 // Get content as plain text for SEO
@@ -185,7 +195,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
 
     <!-- Hreflang -->
     {alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
-    <link rel="alternate" hreflang="x-default" href={`${siteUrl}/zh/activity/${activity.slug}/`} />
+    <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
 
     <!-- Schema.org structured data for Article -->
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -245,7 +255,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
     })} />
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
-    <Header lang={lang} />
+    <Header lang={lang} alternates={alternates} />
 
     <main class="flex-1 container mx-auto px-4 py-8 max-w-4xl">
       <!-- Breadcrumb -->
