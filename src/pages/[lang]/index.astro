@@ -80,7 +80,21 @@ for (const row of data) {
     // Ignore malformed legacy tag JSON rather than breaking the homepage.
   }
 }
-const homepageTags = Array.from(allTags);
+// Keep the homepage filter focused. Provider records retain their full tags so
+// free-text search and detail pages still expose every useful attribute.
+const selectedTagDefinitions = [
+  { value: '低价VPS', zh: '低价VPS', en: 'Budget VPS' },
+  { value: '美国', zh: '美国', en: 'United States' },
+  { value: '香港', zh: '香港', en: 'Hong Kong' },
+  { value: 'CN2 GIA', zh: 'CN2 GIA', en: 'CN2 GIA' },
+  { value: '中国优化', zh: '中国优化', en: 'China Optimized' },
+  { value: '住宅IP', zh: '住宅IP', en: 'Residential IP' },
+  { value: '原生IP', zh: '原生IP', en: 'Native IP' },
+  { value: 'AMD EPYC', zh: 'AMD EPYC', en: 'AMD EPYC' },
+  { value: 'NVMe', zh: 'NVMe', en: 'NVMe' },
+  { value: 'Windows', zh: 'Windows', en: 'Windows' },
+] as const;
+const homepageTags = selectedTagDefinitions.filter((tag) => allTags.has(tag.value));
 
 const homeJsonLd = {
   '@context': 'https://schema.org',
@@ -164,20 +178,15 @@ const itemListJsonLd = {
       </button>
     </div>
     <div id="search-tags" class="mt-3 flex flex-wrap gap-2">
-      {homepageTags.map((tag, index) => (
+      {homepageTags.map((tag) => (
         <button
           type="button"
-          class:list={['text-xs px-3 py-1 tag-chip-btn rounded-full transition-colors', index >= 12 && 'mobile-tag-extra']}
-          data-tag={tag}
+          class="text-xs px-3 py-1 tag-chip-btn rounded-full transition-colors"
+          data-tag={tag.value}
         >
-          {tag}
+          {tag[lang]}
         </button>
       ))}
-      {homepageTags.length > 12 && (
-        <button type="button" id="tag-toggle" class="tag-toggle text-xs px-3 py-1 rounded-full sm:hidden" aria-expanded="false">
-          {lang === 'zh' ? '展开全部' : 'Show all'}
-        </button>
-      )}
     </div>
   </div>
   </section>
@@ -214,7 +223,7 @@ const itemListJsonLd = {
     const searchButton = document.getElementById('search-button');
     const clearButton = document.getElementById('clear-button');
     const searchTags = document.getElementById('search-tags');
-    const tagToggle = document.getElementById('tag-toggle');
+
     const providerContainer = document.getElementById('provider-container');
 
     // Escape HTML to prevent XSS
@@ -376,13 +385,5 @@ const itemListJsonLd = {
       });
     }
 
-    tagToggle?.addEventListener('click', function() {
-      const expanded = tagToggle.getAttribute('aria-expanded') === 'true';
-      searchTags?.classList.toggle('tags-expanded', !expanded);
-      tagToggle.setAttribute('aria-expanded', String(!expanded));
-      tagToggle.textContent = !expanded
-        ? (lang === 'zh' ? '收起' : 'Show less')
-        : (lang === 'zh' ? '展开全部' : 'Show all');
-    });
   </script>
 </BaseLayout>
