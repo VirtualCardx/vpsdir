@@ -124,7 +124,7 @@ const faqJsonLd = {
       &larr; {t(lang, 'common.back')}
     </a>
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+    <div class="public-surface bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
       <div class="flex items-start gap-6">
         <img
           src={logoUrl}
@@ -163,7 +163,7 @@ const faqJsonLd = {
             href={provider.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="mt-4 inline-flex w-full sm:w-auto justify-center items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+            class="primary-action mt-4 inline-flex w-full sm:w-auto justify-center items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
           >
             {t(lang, 'provider.visit')} &rarr;
           </a>
@@ -177,7 +177,7 @@ const faqJsonLd = {
         </div>
       )}
 
-      <div class="mt-6 pt-6 border-t border-gray-100">
+      <div class="editorial-note mt-6 pt-6 border-t border-gray-100">
         <p class="text-xs text-gray-600">
           {lang === 'zh'
             ? '信息由 VPSDEX 编辑整理；价格、库存与条款以服务商官网为准。'
@@ -195,7 +195,7 @@ const faqJsonLd = {
       </div>
     </div>
 
-    <section class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 shadow-sm mt-6" aria-labelledby="provider-faq">
+    <section class="public-surface bg-white rounded-xl border border-gray-200 p-6 sm:p-8 mt-6" aria-labelledby="provider-faq">
       <h2 id="provider-faq" class="text-lg font-semibold text-gray-800 mb-4">
         {lang === 'zh' ? '常见问题' : 'Frequently asked questions'}
       </h2>

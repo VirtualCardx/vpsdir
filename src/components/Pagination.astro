@@ -65,21 +65,24 @@ const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).
     align-items: center;
     justify-content: center;
     border: 1px solid var(--theme-border);
-    border-radius: 0.625rem;
+    border-radius: 0.7rem;
     background: #fff;
     color: #374151;
     padding: 0 0.75rem;
     font-size: 0.875rem;
-    font-weight: 600;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    font-weight: 650;
+    box-shadow: 0 1px 2px rgba(15, 28, 48, 0.035);
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
   }
 
   .pagination-link:hover:not(.is-disabled),
   .pagination-link.is-current {
-    border-color: var(--theme-primary);
-    background: var(--theme-primary);
+    border-color: var(--theme-accent);
+    background: var(--theme-accent);
     color: #fff;
   }
+
+  .pagination-link:hover:not(.is-disabled) { transform: translateY(-1px); }
 
   .pagination-link.is-disabled {
     cursor: not-allowed;

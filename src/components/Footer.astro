@@ -10,11 +10,14 @@ const { lang } = Astro.props;
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="site-nav border-t py-10 mt-16">
+<footer class="site-footer border-t py-12 mt-20">
   <div class="site-shell mx-auto px-5 sm:px-6">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
       <div>
-        <h3 class="font-semibold mb-4">{t(lang, 'site.brand')}</h3>
+        <div class="flex items-center gap-2.5 mb-4">
+          <span class="brand-mark" aria-hidden="true">V</span>
+          <h3 class="font-semibold">{t(lang, 'site.brand')}</h3>
+        </div>
         <p class="nav-subtitle text-sm">{t(lang, 'site.description')}</p>
       </div>
       <div>
@@ -49,7 +52,7 @@ const currentYear = new Date().getFullYear();
         </ul>
       </div>
     </div>
-    <div class="pt-8 border-t border-gray-200 text-center">
+    <div class="pt-7 border-t footer-divider text-center">
       <p class="nav-subtitle text-sm">
         &copy; {currentYear} {t(lang, 'site.brand')}. {lang === 'zh' ? '保留所有权利。' : 'All rights reserved.'}
       </p>

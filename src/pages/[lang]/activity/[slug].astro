@@ -261,7 +261,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
       </nav>
 
       <!-- Article Header -->
-      <article class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-8">
+      <article class="article-shell bg-white border border-gray-200 overflow-hidden mb-8">
         {activity.featuredImage && (
           <img
             src={activity.featuredImage}
@@ -272,7 +272,7 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
             class="aspect-video w-full border-b border-gray-100 object-cover"
           />
         )}
-        <header class="px-8 pt-8 pb-6 border-b border-gray-100">
+        <header class="article-header px-8 pt-8 pb-6 border-b border-gray-100">
           {activity.isFeatured && (
             <div class="flex items-center gap-2 mb-4">
               <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -310,13 +310,13 @@ const readingTime = Math.ceil(wordCount / 200); // Assume 200 words per minute
 
       <!-- Related Activities -->
       {relatedActivities.length > 0 && (
-        <section class="bg-white rounded-lg border border-gray-200 p-6">
+        <section class="related-panel bg-white border border-gray-200 p-6">
           <h2 class="text-2xl font-bold mb-6">
             {lang === 'zh' ? '相关活动' : 'Related Activities'}
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {relatedActivities.map((related) => (
-              <a href={`/${lang}/activity/${related.slug}/`} class="block p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all">
+              <a href={`/${lang}/activity/${related.slug}/`} class="related-card block p-4 rounded-lg border border-gray-200 transition-all">
                 <div class="text-xs text-gray-500 mb-2">
                   {new Date(related.publishedAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}
                 </div>

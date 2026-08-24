@@ -14,13 +14,14 @@ const currentPath = Astro.url.pathname;
 ---
 
 <header class="site-nav border-b sticky top-0 z-50">
-  <div class="site-shell mx-auto px-5 sm:px-6 py-3.5">
+  <div class="site-shell mx-auto px-5 sm:px-6 py-3">
     <nav class="flex items-center justify-between gap-4">
-      <a href={`/${lang}/`} class="nav-brand shrink-0 text-base font-bold transition-colors">
-        {t(lang, 'site.brand')}
+      <a href={`/${lang}/`} class="nav-brand shrink-0 flex items-center gap-2.5 text-base font-bold transition-colors" aria-label={t(lang, 'site.brand')}>
+        <span class="brand-mark" aria-hidden="true">V</span>
+        <span>{t(lang, 'site.brand')}</span>
       </a>
-      <div class="flex min-w-0 items-center gap-3 overflow-x-auto sm:gap-5">
-        <a href={`/${lang}/`} class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "font-semibold": currentPath === `/${lang}/` }] }>
+      <div class="site-nav-links flex min-w-0 items-center gap-1 overflow-x-auto">
+        <a href={`/${lang}/`} aria-current={currentPath === `/${lang}/` ? 'page' : undefined} class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "is-active": currentPath === `/${lang}/` }] }>
           {t(lang, 'nav.home')}
         </a>
         {primaryProviderCategories.map((category) => {
@@ -28,13 +29,14 @@ const currentPath = Astro.url.pathname;
           return (
             <a
               href={href}
-              class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "font-semibold": currentPath === href }]}
+              aria-current={currentPath === href ? 'page' : undefined}
+              class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "is-active": currentPath === href }]}
             >
               {t(lang, `categories.${category}`)}
             </a>
           );
         })}
-        <a href={`/${lang}/activities/`} class="nav-link shrink-0 whitespace-nowrap text-sm transition-colors">
+        <a href={`/${lang}/activities/`} aria-current={currentPath.startsWith(`/${lang}/activit`) ? 'page' : undefined} class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "is-active": currentPath.startsWith(`/${lang}/activit`) }]}>
           {t(lang, 'nav.activities')}
         </a>
         <LanguageSwitcher lang={lang} alternates={alternates} />

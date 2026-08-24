@@ -63,12 +63,14 @@ const tags = rawTags.map(tag => {
         </div>
       )}
       {descText && <p class="text-sm text-gray-500 mt-2 line-clamp-2">{descText}</p>}
-      {provider.rating != null && provider.rating > 0 && (
-        <div class="flex items-center gap-1 mt-2">
-          <span class="text-yellow-500 text-sm">&#9733;</span>
-          <span class="text-sm text-gray-600">{provider.rating.toFixed(1)}</span>
-        </div>
-      )}
     </div>
+  </div>
+  <div class="provider-card-footer">
+    <span class="provider-rating">
+      {provider.rating != null && provider.rating > 0 ? (
+        <><span aria-hidden="true">★</span> {provider.rating.toFixed(1)}</>
+      ) : (lang === 'zh' ? '服务商资料' : 'Provider profile')}
+    </span>
+    <span class="provider-card-action">{lang === 'zh' ? '查看详情' : 'View details'} <span aria-hidden="true">→</span></span>
   </div>
 </a>

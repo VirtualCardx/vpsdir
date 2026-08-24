@@ -213,7 +213,7 @@ const itemListJsonLd = {
         <div class="flex items-center gap-3">
           <span class="category-count">{items.length} {lang === 'zh' ? '家服务商' : 'providers'}</span>
           {isProviderCategory(category) && (
-            <a href={`/${lang}/category/${category}/`} class="text-sm font-medium text-blue-600 hover:text-gray-900">
+            <a href={`/${lang}/category/${category}/`} class="view-all-link">
               {lang === 'zh' ? '查看全部' : 'View all'} →
             </a>
           )}

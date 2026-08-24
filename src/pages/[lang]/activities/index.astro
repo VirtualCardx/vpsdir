@@ -168,7 +168,7 @@ const jsonLd = {
                   />
                 </a>
               )}
-              <div class="p-6">
+              <div class="activity-card-body p-6">
                 {activity.isFeatured && (
                   <div class="mb-3 text-xs text-yellow-600">⭐ {lang === 'zh' ? '推荐' : 'Featured'}</div>
                 )}
@@ -178,7 +178,7 @@ const jsonLd = {
                 <p class="text-gray-600 text-sm mb-4 line-clamp-3">
                   {activity.description || richTextToPlainText(activity.content).slice(0, 150)}
                 </p>
-                <div class="flex items-center justify-between text-xs text-gray-500">
+                <div class="activity-card-meta flex items-center justify-between text-xs text-gray-500">
                   <time datetime={activity.publishedAt}>{new Date(activity.publishedAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}</time>
                   <span>{activity.viewCount} {lang === 'zh' ? '次浏览' : 'views'}</span>
                 </div>
