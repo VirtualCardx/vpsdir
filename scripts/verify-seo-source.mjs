@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+// pathname 在 Windows 上是 /C:/... 形式,必须用 fileURLToPath 转成原生路径
+const root = fileURLToPath(new URL('..', import.meta.url));
 const read = (path) => readFile(join(root, path), 'utf8');
 const [seo, activity, provider, home, card, utils, middleware, trust, sitemap] = await Promise.all([
   read('src/components/SEO.astro'),

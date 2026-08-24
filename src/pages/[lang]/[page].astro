@@ -160,7 +160,7 @@ const content = pages[page]?.[lang as Locale];
 if (!content) {
   return new Response('Not Found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
 }
-const siteUrl = 'https://vpsdex.com';
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const alternates = locales.map((locale) => ({ lang: locale, href: `${siteUrl}/${locale}/${page}/` }));
 const jsonLd = {
   '@context': 'https://schema.org',

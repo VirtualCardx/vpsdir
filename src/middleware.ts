@@ -6,7 +6,10 @@ import { defaultLocale } from './i18n/config';
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  // 端点可自带更严格的 CSP(如图片服务接口的 default-src 'none'),此时不覆盖
+  if (!headers.has('Content-Security-Policy')) {
+    headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  }
   headers.set('X-Frame-Options', 'DENY');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

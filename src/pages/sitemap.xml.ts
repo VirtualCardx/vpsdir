@@ -18,9 +18,9 @@ function escapeXml(str: string): string {
   });
 }
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ site }) => {
   const db = getDb(env.DB);
-  const baseUrl = 'https://vpsdex.com';
+  const baseUrl = site!.href.replace(/\/$/, '');
   const urls: string[] = [];
 
   // --- 首页 ---

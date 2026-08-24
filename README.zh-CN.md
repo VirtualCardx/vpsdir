@@ -116,10 +116,11 @@ npm run db:setup
 
 ### 4. 配置本地开发密钥
 
-在项目根目录创建 `.dev.vars` 文件：
+复制模板 `.dev.vars.example` 为 `.dev.vars`,填入随机值(`.dev.vars` 已被 gitignore,真实密钥严禁提交):
 
 ```
 ADMIN_SESSION_SECRET=any-random-string-for-local-dev
+API_BEARER_TOKEN=your-local-bearer-token
 ```
 
 ### 5. 启动开发服务器

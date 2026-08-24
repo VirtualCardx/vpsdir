@@ -24,6 +24,8 @@ export const GET: APIRoute = async ({ params }) => {
     const headers = new Headers();
     headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg');
     headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    // 图片资源不需要执行任何脚本;禁止 SVG 内嵌脚本在直接访问时执行(存储型 XSS 防护)
+    headers.set('Content-Security-Policy', "default-src 'none'");
 
     // Handle range requests for large images
     if (object.size) {

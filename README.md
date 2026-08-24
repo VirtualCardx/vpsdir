@@ -116,10 +116,11 @@ The activity migration also creates default activity categories:
 
 ### 4. Configure secrets for local dev
 
-Create a `.dev.vars` file in the project root:
+Create a `.dev.vars` file in the project root (copy from `.dev.vars.example`; the file is gitignored, never commit real secrets):
 
 ```
 ADMIN_SESSION_SECRET=any-random-string-for-local-dev
+API_BEARER_TOKEN=your-local-bearer-token
 ```
 
 ### 5. Start the dev server

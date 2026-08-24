@@ -52,7 +52,7 @@ const metaDesc = content?.meta_desc
     : `${name} is a ${categoryLabel} provider. See detailed info, ratings and reviews on ${t(lang as Locale, 'site.brand')}.`);
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 
-const siteUrl = 'https://vpsdex.com';
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const alternates = locales.map((l) => ({
   lang: l,
   href: `${siteUrl}${getProviderAlternateUrl(l, provider.slug_zh, provider.slug_en)}`,

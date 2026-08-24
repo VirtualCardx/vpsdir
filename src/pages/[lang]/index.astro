@@ -51,7 +51,7 @@ for (const row of data) {
   categories.get(cat)!.push(row);
 }
 
-const siteUrl = 'https://vpsdex.com';
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const alternates = locales.map((l) => ({ lang: l, href: `${siteUrl}/${l}/` }));
 
 // Prepare data for client-side search

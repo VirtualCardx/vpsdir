@@ -8,7 +8,7 @@ interface Props {
 }
 
 const { title, description, alternates, jsonLd, xDefault } = Astro.props;
-const siteUrl = 'https://vpsdex.com';
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}${Astro.url.pathname}`;
 const siteName = 'VPSDEX';
 const ogImage = `${siteUrl}/favicon.svg`;

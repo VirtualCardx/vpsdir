@@ -2,7 +2,7 @@
 name: "vpsdir-content-manager"
 description: "Manage VPS Directory website content (providers, activities, categories, images) via REST API. Use when publishing, editing, or deleting any content on vpsdir.com."
 version: "1.0.0"
-base_url: "https://vpsdir.com"
+base_url: "https://vpsdex.com"
 auth_type: "Bearer Token"
 ---
 
@@ -15,10 +15,12 @@ auth_type: "Bearer Token"
 所有 API 请求必须在 Header 中携带 Bearer Token：
 
 ```
-Authorization: Bearer vpsdir_9a0248b8f2372320f27a58cf8639ee768529f9e135d9db1021133f4827a0ec2e
+Authorization: Bearer <YOUR_API_BEARER_TOKEN>
 ```
 
 未携带或携带错误 Token 的请求将返回 `401 Unauthorized`。
+
+> **注意**:真实 Token 通过 `wrangler secret put API_BEARER_TOKEN` 设置(本地开发写在 `.dev.vars` 中)。请勿将真实 Token 写入任何文档、代码或提交到仓库。
 
 ## 基础信息
 

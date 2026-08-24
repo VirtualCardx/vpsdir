@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { requireApiAuth, jsonResponse, handleCors } from '../../../lib/api-auth';
+import { resolveImageType } from '../../../lib/image-upload';
 
 // POST /api/v1/upload - 上传图片到 R2
 // 表单字段:
@@ -23,8 +24,12 @@ export const POST: APIRoute = async ({ request }) => {
       return jsonResponse({ error: 'No file uploaded. Provide an "image" field.' }, 400);
     }
 
-    if (!file.type.startsWith('image/')) {
-      return jsonResponse({ error: 'Invalid file type. Only images are allowed.' }, 400);
+    const resolvedType = resolveImageType(file.name, file.type);
+    if (!resolvedType) {
+      return jsonResponse(
+        { error: 'Invalid file type. Allowed extensions: jpg, jpeg, png, gif, webp, svg' },
+        400,
+      );
     }
 
     // 最大 5MB
@@ -41,14 +46,13 @@ export const POST: APIRoute = async ({ request }) => {
     const random = Array.from(crypto.getRandomValues(new Uint8Array(4)))
       .map((byte) => byte.toString(16).padStart(2, '0'))
       .join('');
-    const extension = file.name.split('.').pop() || 'jpg';
 
     // Logo 存到 logos/ 前缀（由 /api/logo/ 端点服务），编辑器图片存到 editor-images/（由 /api/image/ 端点服务）
     const prefix = type === 'logo' ? 'logos' : 'editor-images';
-    const filename = `${prefix}/${timestamp}-${random}.${extension}`;
+    const filename = `${prefix}/${timestamp}-${random}.${resolvedType.extension}`;
 
     await env.R2.put(filename, await file.arrayBuffer(), {
-      httpMetadata: { contentType: file.type },
+      httpMetadata: { contentType: resolvedType.contentType },
     });
 
     // 根据类型返回不同的访问路径

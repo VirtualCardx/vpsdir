@@ -152,7 +152,7 @@ const localizedSlugs = new Map(localizedSlugRows.map((row) => [row.lang, row.slu
 const siteName = t(lang, 'site.brand');
 const pageTitle = activity.metaTitle || activity.title;
 const pageDesc = activity.metaDesc || activity.description || richTextToPlainText(activity.content).slice(0, 160);
-const siteUrl = 'https://vpsdex.com';
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const pageUrl = `${siteUrl}/${lang}/activity/${activity.slug}/`;
 const alternates = locales.map((l) => ({
   lang: l,
