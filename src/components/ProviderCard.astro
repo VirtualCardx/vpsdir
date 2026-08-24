@@ -3,6 +3,7 @@ import type { Locale } from '../i18n/config';
 import { t } from '../i18n/utils';
 import { getLogoUrl } from '../lib/r2';
 import { richTextToPlainText } from '../lib/rich-text';
+import { parseStoredTags } from '../lib/validation';
 
 interface Props {
   provider: {
@@ -27,7 +28,7 @@ const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
 const descText = richTextToPlainText(content.desc);
 
 // Parse tags JSON (supports both old flat array and new bilingual format)
-const rawTags = provider.tags ? JSON.parse(provider.tags) : [];
+const rawTags = parseStoredTags(provider.tags);
 const tags = rawTags.map(tag => {
   if (typeof tag === 'string') return tag;
   return tag[lang] || tag.zh || tag.en || '';

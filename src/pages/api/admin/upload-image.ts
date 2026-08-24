@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { resolveImageType } from '../../../lib/image-upload';
+import { validateImageFile } from '../../../lib/image-upload';
 
 // Upload image to R2 and return the URL
 export const POST: APIRoute = async ({ request }) => {
@@ -15,23 +15,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Validate file type (server-side authoritative check)
-    const resolvedType = resolveImageType(file.name, file.type);
-    if (!resolvedType) {
-      return new Response(JSON.stringify({ error: 'Invalid file type. Allowed extensions: jpg, jpeg, png, gif, webp, svg' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return new Response(JSON.stringify({ error: 'File too large. Maximum size is 5MB.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const resolvedType = await validateImageFile(file);
 
     // Generate unique filename
     const timestamp = Date.now();
@@ -57,8 +41,8 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (error) {
     console.error('Image upload error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to upload image' }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Failed to upload image' }), {
+      status: error instanceof Error ? 400 : 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }

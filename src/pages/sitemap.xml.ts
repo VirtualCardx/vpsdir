@@ -4,6 +4,7 @@ import { getDb } from '../lib/db';
 import { providers, activities, activitiesContent } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { locales } from '../i18n/config';
+import { providerCategories } from '../lib/provider-categories';
 
 function escapeXml(str: string): string {
   return str.replace(/[<>&'"]/g, (c) => {
@@ -34,6 +35,22 @@ export const GET: APIRoute = async ({ site }) => {
     <priority>1.0</priority>
 ${hreflangs}
   </url>`);
+  }
+
+  // --- 服务商类目列表页 ---
+  for (const category of providerCategories) {
+    for (const locale of locales) {
+      const hreflangs = locales
+        .map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${baseUrl}/${l}/category/${category}/" />`)
+        .join('\n');
+      urls.push(`  <url>
+    <loc>${baseUrl}/${locale}/category/${category}/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+${hreflangs}
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/zh/category/${category}/" />
+  </url>`);
+    }
   }
 
   // --- 活动列表页 ---

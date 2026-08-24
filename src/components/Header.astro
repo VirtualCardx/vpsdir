@@ -2,6 +2,7 @@
 import type { Locale } from '../i18n/config';
 import { t } from '../i18n/utils';
 import LanguageSwitcher from './LanguageSwitcher.astro';
+import { primaryProviderCategories } from '../lib/provider-categories';
 
 interface Props {
   lang: Locale;
@@ -9,20 +10,31 @@ interface Props {
 }
 
 const { lang, alternates } = Astro.props;
-const currentYear = new Date().getFullYear();
+const currentPath = Astro.url.pathname;
 ---
 
 <header class="site-nav border-b sticky top-0 z-50">
   <div class="site-shell mx-auto px-5 sm:px-6 py-3.5">
-    <nav class="flex items-center justify-between">
-      <a href={`/${lang}/`} class="nav-brand text-base font-bold transition-colors">
+    <nav class="flex items-center justify-between gap-4">
+      <a href={`/${lang}/`} class="nav-brand shrink-0 text-base font-bold transition-colors">
         {t(lang, 'site.brand')}
       </a>
-      <div class="flex items-center gap-4 sm:gap-6">
-        <a href={`/${lang}/`} class="nav-link text-sm transition-colors">
+      <div class="flex min-w-0 items-center gap-3 overflow-x-auto sm:gap-5">
+        <a href={`/${lang}/`} class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "font-semibold": currentPath === `/${lang}/` }] }>
           {t(lang, 'nav.home')}
         </a>
-        <a href={`/${lang}/activities/`} class="nav-link text-sm transition-colors">
+        {primaryProviderCategories.map((category) => {
+          const href = `/${lang}/category/${category}/`;
+          return (
+            <a
+              href={href}
+              class:list={["nav-link shrink-0 whitespace-nowrap text-sm transition-colors", { "font-semibold": currentPath === href }]}
+            >
+              {t(lang, `categories.${category}`)}
+            </a>
+          );
+        })}
+        <a href={`/${lang}/activities/`} class="nav-link shrink-0 whitespace-nowrap text-sm transition-colors">
           {t(lang, 'nav.activities')}
         </a>
         <LanguageSwitcher lang={lang} alternates={alternates} />

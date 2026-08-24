@@ -25,6 +25,20 @@ function withSecurityHeaders(response: Response): Response {
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
+  // Bearer-token API is intentionally cross-origin. Handle browser preflight
+  // before Astro attempts method dispatch on individual endpoint modules.
+  if (pathname.startsWith('/api/v1/') && context.request.method === 'OPTIONS') {
+    return withSecurityHeaders(new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    }));
+  }
+
   // Skip static assets
   if (pathname.startsWith('/_') || pathname.startsWith('/favicon')) {
     return withSecurityHeaders(await next());

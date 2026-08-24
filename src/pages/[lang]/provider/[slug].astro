@@ -8,6 +8,7 @@ import { providers, providersContent } from '../../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
 import { sanitizeRichText, richTextToPlainText } from '../../../lib/rich-text';
+import { parseStoredTags } from '../../../lib/validation';
 
 const lang = Astro.params.lang as string;
 if (!isValidLocale(lang)) {
@@ -22,7 +23,7 @@ const field = lang === 'zh' ? 'slug_zh' : 'slug_en';
 const provider = await db
   .select()
  .from(providers)
-  .where(eq(providers[field], slug))
+  .where(and(eq(providers[field], slug), eq(providers.is_active, true)))
   .get();
 
 if (!provider) {
@@ -59,7 +60,7 @@ const alternates = locales.map((l) => ({
 }));
 
 // Parse tags JSON (supports both old flat array and new bilingual format)
-const rawTags = provider.tags ? JSON.parse(provider.tags) : [];
+const rawTags = parseStoredTags(provider.tags);
 const tags = rawTags.map(tag => {
   if (typeof tag === 'string') return tag;
   return tag[lang] || tag.zh || tag.en || '';

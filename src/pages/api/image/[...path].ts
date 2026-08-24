@@ -8,8 +8,8 @@ export const GET: APIRoute = async ({ params }) => {
       return new Response('Not found', { status: 404 });
     }
 
-    // Only allow access to editor-images prefix
-    if (!filename.startsWith('editor-images/')) {
+    // Only expose explicitly public image prefixes.
+    if (!filename.startsWith('editor-images/') && !filename.startsWith('activity-images/')) {
       return new Response('Forbidden', { status: 403 });
     }
 

@@ -5,11 +5,14 @@ interface Props {
   alternates?: { lang: string; href: string }[];
   jsonLd?: Record<string, unknown>;
   xDefault?: string;
+  canonical?: string;
+  prev?: string;
+  next?: string;
 }
 
-const { title, description, alternates, jsonLd, xDefault } = Astro.props;
+const { title, description, alternates, jsonLd, xDefault, canonical, prev, next } = Astro.props;
 const siteUrl = Astro.site!.href.replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}${Astro.url.pathname}`;
+const canonicalUrl = canonical || `${siteUrl}${Astro.url.pathname}`;
 const siteName = 'VPSDEX';
 const ogImage = `${siteUrl}/favicon.svg`;
 ---
@@ -17,6 +20,8 @@ const ogImage = `${siteUrl}/favicon.svg`;
 <title>{title}</title>
 <meta name="description" content={description || ''} />
 <link rel="canonical" href={canonicalUrl} />
+{prev && <link rel="prev" href={prev} />}
+{next && <link rel="next" href={next} />}
 <meta name="generator" content={Astro.generator} />
 
 <!-- Open Graph -->
