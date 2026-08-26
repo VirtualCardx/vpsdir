@@ -82,10 +82,10 @@ const siteName = t(lang, 'site.brand');
 const paginationTitle = currentPage > 1 ? (lang === 'zh' ? ` - 第 ${currentPage} 页` : ` - Page ${currentPage}`) : '';
 const pageTitle = lang === 'zh'
   ? `VPS评测、优惠与选购指南${paginationTitle}`
-  : `VPS Reviews, Deals & Hosting Guides${paginationTitle}`;
+  : `VPS Reviews & Hosting Guides: 2026 Tests & Deals${paginationTitle}`;
 const pageDesc = lang === 'zh'
   ? '查看 VPS 主机评测、优惠活动、产品更新、线路分析与选购指南，了解价格、适用场景和重要限制。'
-  : 'Read VPS hosting reviews, verified deals, product updates, routing analysis and buying guides with pricing context and practical limitations.';
+  : 'Independent VPS reviews and verified deals for 2026: hosting tests, CN2/9929 routing analysis, pricing context and the limits to check before buying.';
 const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}${pageHref(currentPage)}`;
 const alternateSuffix = canonicalUrl.slice(`${siteUrl}${basePath}`.length);

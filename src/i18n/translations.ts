@@ -69,8 +69,8 @@ const translations: Record<Locale, Record<string, Record<string, string>>> = {
   },
   en: {
     site: {
-      title: 'VPS Hosting Reviews & Provider Comparison | VPSDEX',
-      description: 'Compare VPS hosting, domain, business email and CDN providers with independent reviews, plan context and risk notes for better cloud-service decisions.',
+      title: 'VPSDEX: VPS Reviews, Deals & Provider Comparison 2026',
+      description: 'Compare VPS, domain, email and CDN providers with independent 2026 reviews, verified deals, routing analysis and pricing context before you buy.',
       brand: 'VPSDEX',
     },
     nav: {
