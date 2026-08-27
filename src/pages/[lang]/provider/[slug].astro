@@ -173,7 +173,7 @@ const faqJsonLd = {
       {desc && (
         <div class="mt-6 pt-6 border-t border-gray-100">
           <h2 class="text-lg font-semibold text-gray-800 mb-2">{t(lang, 'provider.description')}</h2>
-          <div class="prose prose-sm max-w-none text-gray-600" set:html={sanitizeRichText(desc) || ''} />
+          <div class="provider-rich-content" set:html={sanitizeRichText(desc) || ''} />
         </div>
       )}
 
