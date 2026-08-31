@@ -4,11 +4,12 @@ import { locales, type Locale, isValidLocale } from '../../../i18n/config';
 import { t, getProviderAlternateUrl } from '../../../i18n/utils';
 import { getLogoUrl } from '../../../lib/r2';
 import { getDb } from '../../../lib/db';
-import { providers, providersContent } from '../../../db/schema';
+import { providers, providersContent, activities, activitiesContent } from '../../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
 import { sanitizeRichText, richTextToPlainText } from '../../../lib/rich-text';
 import { parseStoredTags } from '../../../lib/validation';
+import { rankRelatedActivities } from '../../../lib/activity-related';
 
 const lang = Astro.params.lang as string;
 if (!isValidLocale(lang)) {
@@ -52,6 +53,35 @@ const metaDesc = content?.meta_desc
     ? `${name} 是一家${categoryLabel}服务商，查看 ${t(lang as Locale, 'site.brand')} 上的详细介绍、用户评分与网友评测。`
     : `${name} is a ${categoryLabel} provider. See detailed info, ratings and reviews on ${t(lang as Locale, 'site.brand')}.`);
 const logoUrl = getLogoUrl(provider.logo_key, provider.updated_at);
+
+const providerSlug = lang === 'zh' ? provider.slug_zh : provider.slug_en;
+const activityRows = await db
+  .select({
+    id: activities.id,
+    slug: activitiesContent.slug,
+    title: activitiesContent.title,
+    publishedAt: activities.published_at,
+  })
+  .from(activities)
+  .innerJoin(
+    activitiesContent,
+    and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
+  )
+  .where(eq(activities.is_active, true));
+const providerActivities = rankRelatedActivities(
+  activityRows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    publishedAt: row.publishedAt,
+  })),
+  { slug: providerSlug, title: name },
+  3,
+).filter((activity) => {
+  const haystack = `${activity.slug} ${activity.title}`.toLowerCase();
+  return haystack.includes(providerSlug.toLowerCase())
+    || haystack.includes(name.toLowerCase());
+});
 
 const siteUrl = Astro.site!.href.replace(/\/$/, '');
 const alternates = locales.map((l) => ({
@@ -175,6 +205,23 @@ const faqJsonLd = {
           <h2 class="text-lg font-semibold text-gray-800 mb-2">{t(lang, 'provider.description')}</h2>
           <div class="provider-rich-content" set:html={sanitizeRichText(desc) || ''} />
         </div>
+      )}
+
+      {providerActivities.length > 0 && (
+        <section class="mt-6 pt-6 border-t border-gray-100" aria-labelledby="provider-reviews-heading">
+          <h2 id="provider-reviews-heading" class="text-lg font-semibold text-gray-800 mb-3">
+            {lang === 'zh' ? `${name} 评测与活动` : `${name} reviews and updates`}
+          </h2>
+          <ul class="space-y-2">
+            {providerActivities.map((activity) => (
+              <li>
+                <a class="text-blue-700 hover:text-blue-900 font-medium" href={`/${lang}/activity/${activity.slug}/`}>
+                  {activity.title} <span aria-hidden="true">→</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <div class="editorial-note mt-6 pt-6 border-t border-gray-100">

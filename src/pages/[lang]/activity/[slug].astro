@@ -7,10 +7,11 @@ import type { Locale } from '../../../i18n/config';
 import { isValidLocale, locales } from '../../../i18n/config';
 import { getDb } from '../../../lib/db';
 import { activities, activitiesContent } from '../../../db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { env } from 'cloudflare:workers';
 import { richTextToPlainText, sanitizeRichText } from '../../../lib/rich-text';
 import { getActivityImageUrl } from '../../../lib/r2';
+import { rankRelatedActivities } from '../../../lib/activity-related';
 
 const lang = Astro.params.lang as string;
 const slug = Astro.params.slug;
@@ -109,31 +110,35 @@ await db.update(activities)
   .set({ view_count: sql`${activities.view_count} + 1` })
   .where(eq(activities.id, activityBasic.id));
 
-// Get related activities with content via JOINs
+// Rank related activities by shared provider/topic terms, then use recency only as fallback.
 const relatedRows = await db
   .select({
+    id: activities.id,
     slug: activitiesContent.slug,
     fallbackSlug: activities.slug,
     title: activitiesContent.title,
     publishedAt: activities.published_at,
   })
   .from(activities)
-  .leftJoin(
+  .innerJoin(
     activitiesContent,
     and(eq(activitiesContent.activity_id, activities.id), eq(activitiesContent.lang, lang)),
   )
   .where(and(
     eq(activities.is_active, true),
     sql`${activities.id} != ${activityBasic.id}`
-  ))
-  .orderBy(desc(activities.published_at))
-  .limit(4);
+  ));
 
-const relatedActivities = relatedRows.map((row) => ({
-  slug: row.slug || row.fallbackSlug,
-  title: row.title || '',
-  publishedAt: row.publishedAt,
-}));
+const relatedActivities = rankRelatedActivities(
+  relatedRows.map((row) => ({
+    id: row.id,
+    slug: row.slug || row.fallbackSlug,
+    title: row.title || '',
+    publishedAt: row.publishedAt,
+  })),
+  { id: activityBasic.id, slug: activity.slug, title: activity.title },
+  4,
+);
 
 const localizedSlugRows = await db
   .select({ lang: activitiesContent.lang, slug: activitiesContent.slug })

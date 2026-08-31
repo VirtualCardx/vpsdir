@@ -2,6 +2,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
 import { verifySession } from './lib/auth';
 import { defaultLocale } from './i18n/config';
+import { canonicalLocaleRedirect } from './lib/canonical-redirect';
 
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -47,6 +48,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Root redirect to default locale
   if (pathname === '/') {
     return withSecurityHeaders(context.redirect(`/${defaultLocale}/`));
+  }
+
+  const canonicalPath = canonicalLocaleRedirect(pathname);
+  if (canonicalPath) {
+    const destination = new URL(canonicalPath, context.url);
+    destination.search = context.url.search;
+    return withSecurityHeaders(context.redirect(destination.toString(), 301));
   }
 
   // Admin route protection (except login page)
